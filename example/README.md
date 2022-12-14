@@ -1,16 +1,76 @@
-# zego_imkit_demo
 
-A new Flutter project.
+# ZegoIMKit(ZegoCloud In-App Chat UIKit)
 
-## Getting Started
+🥳beta support:
+- Create peer-to-peer chat / Create group chat/ Join group chat
+- Send text, picture(<10M), gif(<10M), video(<100M), file(<100M)
+- Long press the conversation list item to delete the conversation or exit the group chat
+- custom ui (Please check widgets' parameters)
 
-This project is a starting point for a Flutter application.
+✨Coming soon: 
+- Invite to join group chat / set user avatar /set group avatar
+- download files
+## 1. init imkit
 
-A few resources to get you started if this is your first Flutter project:
+```
+void main() {
+  ZegoIMKit().init(
+    appID: , // your appid
+    appSign: '', // your appSign
+  );
+  runApp(const ZegoIMKitDemo());
+}
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 2. user login
+
+```dart
+ElevatedButton(
+    onPressed: () async {
+        await ZegoIMKit()
+            .login(id: userID.text, name: userName.text);
+            Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+                builder: (context) =>
+                    const ZegoIMKitDemoHomePage(),
+            ),
+        );
+    },
+    child: const Text("login"),
+)
+```
+
+## 3. enjoy it
+
+```dart
+class ZegoIMKitDemoHomePage extends StatelessWidget {
+  const ZegoIMKitDemoHomePage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Conversations'),
+          actions: const [HomePagePopupMenuButton()],
+        ),
+        body: ZegoConversationListView(
+          onPressed: (context, conversation, defaultAction) {
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return ZegoMessageListPage(
+                  conversationID: conversation.id,
+                  conversationType: conversation.type,
+                );
+              },
+            ));
+          },
+        ),
+      ),
+    );
+  }
+}
+
+```

@@ -28,45 +28,50 @@ class _ZegoIMKitDemoLoginPageState extends State<ZegoIMKitDemoLoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: userID,
-                      decoration: const InputDecoration(labelText: "user ID"),
-                    ),
-                    TextFormField(
-                      controller: userName,
-                      decoration: const InputDecoration(labelText: "user name"),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () async {
-                        await ZegoIMKit()
-                            .login(id: userID.text, name: userName.text);
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => const ZegoIMKitDemoHomePage(),
-                          ),
-                        );
-                      },
-                      child: const Text("login"),
-                    )
-                  ],
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        controller: userID,
+                        decoration: const InputDecoration(labelText: "user ID"),
+                      ),
+                      TextFormField(
+                        controller: userName,
+                        decoration:
+                            const InputDecoration(labelText: "user name"),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () async {
+                          await ZegoIMKit()
+                              .login(id: userID.text, name: userName.text);
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const ZegoIMKitDemoHomePage(),
+                            ),
+                          );
+                        },
+                        child: const Text("login"),
+                      )
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
