@@ -1,16 +1,66 @@
-# zego_imkit_demo
 
-A new Flutter project.
+# ZegoIMKit(zego in-app chat sdk)
+## 1. init imkit
 
-## Getting Started
+```
+void main() {
+  ZegoIMKit().init(
+    appID: , // your appid
+    appSign: '', // your appSign
+  );
+  runApp(const ZegoIMKitDemo());
+}
+```
 
-This project is a starting point for a Flutter application.
 
-A few resources to get you started if this is your first Flutter project:
+## 2. user login
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```dart
+ElevatedButton(
+    onPressed: () async {
+        await ZegoIMKit()
+            .login(id: userID.text, name: userName.text);
+            Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+                builder: (context) =>
+                    const ZegoIMKitDemoHomePage(),
+            ),
+        );
+    },
+    child: const Text("login"),
+)
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 3. enjoy it
+
+```dart
+class ZegoIMKitDemoHomePage extends StatelessWidget {
+  const ZegoIMKitDemoHomePage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Conversations'),
+          actions: const [HomePagePopupMenuButton()],
+        ),
+        body: ZegoConversationListView(
+          onPressed: (context, conversation, defaultAction) {
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return ZegoMessageListPage(
+                  conversationID: conversation.id,
+                  conversationType: conversation.type,
+                );
+              },
+            ));
+          },
+        ),
+      ),
+    );
+  }
+}
+
+```
