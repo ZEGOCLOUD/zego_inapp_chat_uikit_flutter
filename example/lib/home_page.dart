@@ -7,22 +7,25 @@ class ZegoIMKitDemoHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Conversations'),
-        actions: const [HomePagePopupMenuButton()],
-      ),
-      body: ZegoConversationListView(
-        onPressed: (context, conversation, defaultAction) {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (context) {
-              return ZegoMessageListPage(
-                conversationID: conversation.id,
-                conversationType: conversation.type,
-              );
-            },
-          ));
-        },
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Conversations'),
+          actions: const [HomePagePopupMenuButton()],
+        ),
+        body: ZegoConversationListView(
+          onPressed: (context, conversation, defaultAction) {
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return ZegoMessageListPage(
+                  conversationID: conversation.id,
+                  conversationType: conversation.type,
+                );
+              },
+            ));
+          },
+        ),
       ),
     );
   }
