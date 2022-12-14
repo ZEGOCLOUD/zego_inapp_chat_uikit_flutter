@@ -5,7 +5,7 @@ import 'login_page.dart';
 void main() {
   ZegoIMKit().init(
     appID: , // your appid
-    appSign: , // your appsign
+    appSign: '', // your appSign
   );
   runApp(const ZegoIMKitDemo());
 }
