@@ -14,7 +14,7 @@ class ListNotifier<T> extends ValueNotifier<List<T>> {
   }
 
   bool remove(Object? item) {
-    bool changed = value.remove(item);
+    final changed = value.remove(item);
     if (changed) notifyListeners();
     return changed;
   }

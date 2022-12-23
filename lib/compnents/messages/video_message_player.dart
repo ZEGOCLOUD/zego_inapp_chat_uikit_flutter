@@ -1,67 +1,71 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:chewie/chewie.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:zego_imkit/compnents/messages/video_message_preview.dart';
 
-import 'package:zego_imkit/services/services.dart';
+import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
 
-class ZegoVideoMessagePlayer extends StatefulWidget {
-  const ZegoVideoMessagePlayer(this.message, {Key? key}) : super(key: key);
+import 'package:zego_zimkit/compnents/messages/video_message_controls.dart';
+import 'package:zego_zimkit/compnents/messages/video_message_preview.dart';
+import 'package:zego_zimkit/services/services.dart';
 
-  final ZegoIMKitMessage message;
+class ZIMKitVideoMessagePlayer extends StatefulWidget {
+  const ZIMKitVideoMessagePlayer(this.message, {Key? key}) : super(key: key);
+
+  final ZIMKitMessage message;
 
   @override
-  State<ZegoVideoMessagePlayer> createState() => ZegoVideoMessagePlayerState();
+  State<ZIMKitVideoMessagePlayer> createState() =>
+      ZIMKitVideoMessagePlayerState();
 }
 
-class ZegoVideoMessagePlayerState extends State<ZegoVideoMessagePlayer> {
+class ZIMKitVideoMessagePlayerState extends State<ZIMKitVideoMessagePlayer> {
   late VideoPlayerController videoPlayerController;
   late ChewieController chewieController;
 
   @override
   void dispose() async {
-    chewieController.pause();
-    chewieController.dispose();
+    chewieController
+      ..pause()
+      ..dispose();
     videoPlayerController.dispose();
     super.dispose();
   }
 
   @override
   void initState() {
-    final ZIMVideoMessage message =
-        widget.message.data.value as ZIMVideoMessage;
+    final message = widget.message.data.value as ZIMVideoMessage;
     if (message.fileLocalPath.isNotEmpty &&
         File(message.fileLocalPath).existsSync()) {
-      ZegoIMKitLogger.fine(
-          'ZegoVideoMessagePlayer: initPlayer from local file: ${message.fileLocalPath}');
+      ZIMKitLogger.fine(
+          'ZIMKitVideoMessagePlayer: initPlayer from local file: ${message.fileLocalPath}');
       videoPlayerController =
           VideoPlayerController.file(File(message.fileLocalPath.urlEncode));
     } else {
-      ZegoIMKitLogger.fine(
-          'ZegoVideoMessagePlayer: initPlayer from network: ${message.fileDownloadUrl}');
+      ZIMKitLogger.fine(
+          'ZIMKitVideoMessagePlayer: initPlayer from network: ${message.fileDownloadUrl}');
       videoPlayerController =
           VideoPlayerController.network(message.fileDownloadUrl);
     }
 
+    // TODO
     chewieController = ChewieController(
         videoPlayerController: videoPlayerController,
         looping: true,
         customControls:
-            const MaterialDesktopControls(), // always use DesktopControls
-        placeholder: Center(child: ZegoVideoMessagePreview(widget.message)))
+            const ZIMKitCustomControls(), // always use DesktopControls
+        placeholder: Center(child: ZIMKitVideoMessagePreview(widget.message)))
       ..setVolume(kIsWeb ? 0.0 : 1.0)
       ..play();
 
     Future.delayed(const Duration(seconds: 4)).then((value) {
-      if (chewieController.videoPlayerController.value.isInitialized == false) {
-        ZegoIMKitLogger.severe(
-            'videoPlayerController is not initialized, ${widget.message.zim.fileLocalPath}');
-        ZegoIMKitLogger.shout(context,
-            "Seems Can't play this video, ${widget.message.zim.fileLocalPath}");
+      if (!chewieController.videoPlayerController.value.isInitialized) {
+        ZIMKitLogger.severe(
+            'videoPlayerController is not initialized, ${message.fileLocalPath}');
+        ZIMKitLogger.shout(
+            context, "Seems Can't play this video, ${message.fileLocalPath}");
       }
     });
     super.initState();
@@ -77,14 +81,14 @@ class ZegoVideoMessagePlayerState extends State<ZegoVideoMessagePlayer> {
             future: videoPlayerController.initialize(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done) {
-                ZegoIMKitLogger.fine(
-                    'ZegoVideoMessagePlayer: videoPlayerController initialize done');
+                ZIMKitLogger.fine(
+                    'ZIMKitVideoMessagePlayer: videoPlayerController initialize done');
                 return Chewie(
                     key: ValueKey(snapshot.hashCode),
                     controller: chewieController);
               } else {
-                ZegoIMKitLogger.fine(
-                    'ZegoVideoMessagePlayer: videoPlayerController initializing...');
+                ZIMKitLogger.fine(
+                    'ZIMKitVideoMessagePlayer: videoPlayerController initializing...');
                 return Chewie(
                     key: ValueKey(snapshot.hashCode),
                     controller: chewieController);

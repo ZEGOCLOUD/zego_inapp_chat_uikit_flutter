@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:zego_imkit/services/services.dart';
 
-import '../common/common.dart';
-import 'audio_message.dart';
-import 'file_message.dart';
-import 'image_message.dart';
-import 'text_message.dart';
-import 'video_message.dart';
-import 'widgets/widgets.dart';
+import 'package:zego_zimkit/compnents/common/common.dart';
+import 'package:zego_zimkit/compnents/messages/audio_message.dart';
+import 'package:zego_zimkit/compnents/messages/file_message.dart';
+import 'package:zego_zimkit/compnents/messages/image_message.dart';
+import 'package:zego_zimkit/compnents/messages/text_message.dart';
+import 'package:zego_zimkit/compnents/messages/video_message.dart';
+import 'package:zego_zimkit/compnents/messages/widgets/widgets.dart';
+import 'package:zego_zimkit/services/services.dart';
 
 export 'audio_message.dart';
 export 'text_message.dart';
 export 'video_message.dart';
 
-class ZegoIMKitMessageWidget extends StatelessWidget {
-  const ZegoIMKitMessageWidget({
+class ZIMKitMessageWidget extends StatelessWidget {
+  const ZIMKitMessageWidget({
     Key? key,
     required this.message,
     this.onPressed,
@@ -24,39 +24,41 @@ class ZegoIMKitMessageWidget extends StatelessWidget {
     this.timestampBuilder,
   }) : super(key: key);
 
-  final ZegoIMKitMessage message;
+  final ZIMKitMessage message;
   final Widget Function(
-          BuildContext context, ZegoIMKitMessage message, Widget defaultWidget)?
+          BuildContext context, ZIMKitMessage message, Widget defaultWidget)?
       avatarBuilder;
   final Widget Function(
-          BuildContext context, ZegoIMKitMessage message, Widget defaultWidget)?
+          BuildContext context, ZIMKitMessage message, Widget defaultWidget)?
       statusBuilder;
   final Widget Function(
-          BuildContext context, ZegoIMKitMessage message, Widget defaultWidget)?
+          BuildContext context, ZIMKitMessage message, Widget defaultWidget)?
       timestampBuilder;
-  final void Function(BuildContext context, ZegoIMKitMessage message,
-      Function defaultAction)? onPressed;
-  final void Function(BuildContext context, ZegoIMKitMessage message,
-      Function defaultAction)? onLongPress;
+  final void Function(
+          BuildContext context, ZIMKitMessage message, Function defaultAction)?
+      onPressed;
+  final void Function(
+          BuildContext context, ZIMKitMessage message, Function defaultAction)?
+      onLongPress;
 
   // TODO default onPressed onLongPress action
   // TODO custom meesage
-  Widget buildMessage(BuildContext context, ZegoIMKitMessage message) {
+  Widget buildMessage(BuildContext context, ZIMKitMessage message) {
     switch (message.data.value.type) {
       case ZIMMessageType.text:
-        return ZegoTextMessage(
+        return ZIMKitTextMessage(
             onLongPress: onLongPress, onPressed: onPressed, message: message);
       case ZIMMessageType.audio:
-        return ZegoAudioMessage(
+        return ZIMKitAudioMessage(
             onLongPress: onLongPress, onPressed: onPressed, message: message);
       case ZIMMessageType.video:
-        return ZegoVideoMessage(
+        return ZIMKitVideoMessage(
             onLongPress: onLongPress, onPressed: onPressed, message: message);
       case ZIMMessageType.file:
-        return ZegoFileMessage(
+        return ZIMKitFileMessage(
             onLongPress: onLongPress, onPressed: onPressed, message: message);
       case ZIMMessageType.image:
-        return ZegoImageMessage(
+        return ZIMKitImageMessage(
             onLongPress: onLongPress, onPressed: onPressed, message: message);
 
       default:
@@ -64,22 +66,22 @@ class ZegoIMKitMessageWidget extends StatelessWidget {
     }
   }
 
-  Widget buildStatus(BuildContext context, ZegoIMKitMessage message) {
-    Widget defaultStatusWidget = ZegoMessageStatusDot(message);
+  Widget buildStatus(BuildContext context, ZIMKitMessage message) {
+    final Widget defaultStatusWidget = ZIMKitMessageStatusDot(message);
     return statusBuilder?.call(context, message, defaultStatusWidget) ??
         defaultStatusWidget;
   }
 
-  Widget buildAvatar(BuildContext context, ZegoIMKitMessage message) {
-    Widget defaultAvatarWidget =
-        ZegoIMKitAvatar(userID: message.senderUserID, width: 50, height: 50);
+  Widget buildAvatar(BuildContext context, ZIMKitMessage message) {
+    final Widget defaultAvatarWidget =
+        ZIMKitAvatar(userID: message.senderUserID, width: 50, height: 50);
     return avatarBuilder?.call(context, message, defaultAvatarWidget) ??
         defaultAvatarWidget;
   }
 
   // TODO how to custom laytout
   // TODO timestamp
-  List<Widget> localMessage(BuildContext context, ZegoIMKitMessage message) {
+  List<Widget> localMessage(BuildContext context, ZIMKitMessage message) {
     return [
       buildMessage(context, message),
       // buildAvatar(context, message),
@@ -87,7 +89,7 @@ class ZegoIMKitMessageWidget extends StatelessWidget {
     ];
   }
 
-  List<Widget> remoteMessage(BuildContext context, ZegoIMKitMessage message) {
+  List<Widget> remoteMessage(BuildContext context, ZIMKitMessage message) {
     return [
       buildAvatar(context, message),
       const SizedBox(width: 10),

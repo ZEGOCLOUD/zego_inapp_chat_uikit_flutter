@@ -3,11 +3,12 @@ import 'dart:math';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-import 'package:zego_imkit/services/services.dart';
 import 'package:badges/badges.dart';
 
-class ZegoConversationWidget extends StatefulWidget {
-  const ZegoConversationWidget({
+import 'package:zego_zimkit/services/services.dart';
+
+class ZIMKitConversationWidget extends StatefulWidget {
+  const ZIMKitConversationWidget({
     Key? key,
     required this.conversationID,
     this.conversationType = ZIMConversationType.peer,
@@ -35,16 +36,17 @@ class ZegoConversationWidget extends StatefulWidget {
       onLongPress;
 
   @override
-  State<ZegoConversationWidget> createState() => _ZegoConversationWidgetState();
+  State<ZIMKitConversationWidget> createState() =>
+      _ZIMKitConversationWidgetState();
 }
 
-class _ZegoConversationWidgetState extends State<ZegoConversationWidget> {
+class _ZIMKitConversationWidgetState extends State<ZIMKitConversationWidget> {
   late LongPressDownDetails _longPressDownDetails;
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.of(context).size.width;
     return ValueListenableBuilder(
-        valueListenable: ZegoIMKit()
+        valueListenable: ZIMKit()
             .getConversation(widget.conversationID, widget.conversationType)
             .data,
         builder: (context, ZIMConversation conversation, child) {
@@ -85,9 +87,8 @@ class _ZegoConversationWidgetState extends State<ZegoConversationWidget> {
                               ),
                               const SizedBox(height: 8),
                               Builder(builder: (context) {
-                                Widget defaultWidget =
-                                    defaultlastMessageBuilder(
-                                        conversation.lastMessage);
+                                final defaultWidget = defaultlastMessageBuilder(
+                                    conversation.lastMessage);
                                 return widget.lastMessageBuilder?.call(
                                         context,
                                         conversation.lastMessage,
@@ -100,11 +101,11 @@ class _ZegoConversationWidgetState extends State<ZegoConversationWidget> {
                       ),
                     if (screenWidth >= 250)
                       Builder(builder: (context) {
-                        DateTime? messageTime = conversation.lastMessage != null
+                        final messageTime = conversation.lastMessage != null
                             ? DateTime.fromMillisecondsSinceEpoch(
                                 conversation.lastMessage!.timestamp)
                             : null;
-                        Widget defaultWidget =
+                        final defaultWidget =
                             defaultlastMessageTimeBuilder(messageTime);
                         return widget.lastMessageTimeBuilder
                                 ?.call(context, messageTime, defaultWidget) ??
@@ -133,8 +134,8 @@ class _ZegoConversationWidgetState extends State<ZegoConversationWidget> {
     if (messageTime == null) {
       return const SizedBox.shrink();
     }
-    DateTime now = DateTime.now();
-    Duration duration = DateTime.now().difference(messageTime);
+    final now = DateTime.now();
+    final duration = DateTime.now().difference(messageTime);
 
     late String timeStr;
 

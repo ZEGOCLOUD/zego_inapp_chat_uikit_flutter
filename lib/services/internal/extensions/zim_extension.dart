@@ -1,9 +1,11 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:zego_imkit/zego_imkit.dart';
+
+import 'package:cached_network_image/cached_network_image.dart';
+
+import 'package:zego_zimkit/zego_zimkit.dart';
 
 extension ZIMMessageExtend on ZIMMessage {
-  get isSender => direction == ZIMMessageDirection.send;
+  bool get isSender => direction == ZIMMessageDirection.send;
 
   String tostr() {
     switch (type) {
@@ -30,15 +32,16 @@ extension ZIMMessageExtend on ZIMMessage {
     }
   }
 
-  ZegoIMKitMessage tokit() => ZegoIMKitMessage(ValueNotifier(this));
+  ZIMKitMessage tokit() => ZIMKitMessage(ValueNotifier(this));
 
   ZIMMessage _cloneMediaDetail(ZIMMediaMessage newMessage) {
-    var rv = (this as ZIMMediaMessage);
-    newMessage.fileLocalPath = rv.fileLocalPath;
-    newMessage.fileDownloadUrl = rv.fileDownloadUrl;
-    newMessage.fileUID = rv.fileUID;
-    newMessage.fileName = rv.fileName;
-    newMessage.fileSize = rv.fileSize;
+    final rv = this as ZIMMediaMessage;
+    newMessage
+      ..fileLocalPath = rv.fileLocalPath
+      ..fileDownloadUrl = rv.fileDownloadUrl
+      ..fileUID = rv.fileUID
+      ..fileName = rv.fileName
+      ..fileSize = rv.fileSize;
     return newMessage;
   }
 
@@ -50,75 +53,72 @@ extension ZIMMessageExtend on ZIMMessage {
     } else if (runtimeType == ZIMBarrageMessage) {
       return ZIMBarrageMessage(message: (this as ZIMBarrageMessage).message);
     } else if (runtimeType == ZIMRevokeMessage) {
-      var rv = (this as ZIMRevokeMessage);
-      var newMessage = ZIMRevokeMessage();
-      newMessage.revokeType = rv.revokeType;
-      newMessage.revokeStatus = rv.revokeStatus;
-      newMessage.revokeTimestamp = rv.revokeTimestamp;
-      newMessage.operatedUserID = rv.operatedUserID;
-      newMessage.revokeExtendedData = rv.revokeExtendedData;
-      newMessage.originalMessageType = rv.originalMessageType;
-      newMessage.originalTextMessageContent = rv.originalTextMessageContent;
-      return newMessage;
+      final rv = this as ZIMRevokeMessage;
+      return ZIMRevokeMessage()
+        ..revokeType = rv.revokeType
+        ..revokeStatus = rv.revokeStatus
+        ..revokeTimestamp = rv.revokeTimestamp
+        ..operatedUserID = rv.operatedUserID
+        ..revokeExtendedData = rv.revokeExtendedData
+        ..originalMessageType = rv.originalMessageType
+        ..originalTextMessageContent = rv.originalTextMessageContent;
     } else if (runtimeType == ZIMSystemMessage) {
       return ZIMSystemMessage(message: (this as ZIMSystemMessage).message);
     } else if (runtimeType == ZIMImageMessage) {
-      var rv = (this as ZIMImageMessage);
-      var newMessage = ZIMImageMessage(rv.fileLocalPath);
-      newMessage.thumbnailDownloadUrl = rv.thumbnailDownloadUrl;
-      newMessage.thumbnailLocalPath = rv.thumbnailLocalPath;
-      newMessage.largeImageDownloadUrl = rv.largeImageDownloadUrl;
-      newMessage.largeImageLocalPath = rv.largeImageLocalPath;
-      newMessage.originalImageWidth = rv.originalImageWidth;
-      newMessage.originalImageHeight = rv.originalImageHeight;
-      newMessage.largeImageWidth = rv.largeImageWidth;
-      newMessage.largeImageHeight = rv.largeImageHeight;
-      newMessage.thumbnailWidth = rv.thumbnailWidth;
-      newMessage.thumbnailHeight = rv.thumbnailHeight;
-      newMessage = _cloneMediaDetail(newMessage) as ZIMImageMessage;
-      return newMessage;
+      final rv = this as ZIMImageMessage;
+      return _cloneMediaDetail(
+        ZIMImageMessage(rv.fileLocalPath)
+          ..thumbnailDownloadUrl = rv.thumbnailDownloadUrl
+          ..thumbnailLocalPath = rv.thumbnailLocalPath
+          ..largeImageDownloadUrl = rv.largeImageDownloadUrl
+          ..largeImageLocalPath = rv.largeImageLocalPath
+          ..originalImageWidth = rv.originalImageWidth
+          ..originalImageHeight = rv.originalImageHeight
+          ..largeImageWidth = rv.largeImageWidth
+          ..largeImageHeight = rv.largeImageHeight
+          ..thumbnailWidth = rv.thumbnailWidth
+          ..thumbnailHeight = rv.thumbnailHeight,
+      );
     } else if (runtimeType == ZIMVideoMessage) {
-      var rv = (this as ZIMVideoMessage);
-      var newMessage = ZIMVideoMessage(rv.fileLocalPath);
-      newMessage.videoDuration = rv.videoDuration;
-      newMessage.videoFirstFrameDownloadUrl = rv.videoFirstFrameDownloadUrl;
-      newMessage.videoFirstFrameLocalPath = rv.videoFirstFrameLocalPath;
-      newMessage.videoFirstFrameWidth = rv.videoFirstFrameWidth;
-      newMessage.videoFirstFrameHeight = rv.videoFirstFrameHeight;
-      newMessage = _cloneMediaDetail(newMessage) as ZIMVideoMessage;
-      return newMessage;
+      final rv = this as ZIMVideoMessage;
+      return _cloneMediaDetail(
+        ZIMVideoMessage(rv.fileLocalPath)
+          ..videoDuration = rv.videoDuration
+          ..videoFirstFrameDownloadUrl = rv.videoFirstFrameDownloadUrl
+          ..videoFirstFrameLocalPath = rv.videoFirstFrameLocalPath
+          ..videoFirstFrameWidth = rv.videoFirstFrameWidth
+          ..videoFirstFrameHeight = rv.videoFirstFrameHeight,
+      );
     } else if (runtimeType == ZIMAudioMessage) {
-      var rv = (this as ZIMAudioMessage);
-      var newMessage = ZIMAudioMessage(rv.fileLocalPath);
-      newMessage.audioDuration = rv.audioDuration;
-      newMessage = _cloneMediaDetail(newMessage) as ZIMAudioMessage;
-      return newMessage;
+      final rv = this as ZIMAudioMessage;
+      return _cloneMediaDetail(
+        ZIMAudioMessage(rv.fileLocalPath)..audioDuration = rv.audioDuration,
+      );
     } else if (runtimeType == ZIMFileMessage) {
-      var rv = (this as ZIMFileMessage);
-      var newMessage = ZIMFileMessage(rv.fileLocalPath);
-      newMessage = _cloneMediaDetail(newMessage) as ZIMFileMessage;
-      return newMessage;
+      final rv = this as ZIMFileMessage;
+      return _cloneMediaDetail(
+        ZIMFileMessage(rv.fileLocalPath),
+      );
     } else {
       throw UnimplementedError();
     }
   }
 
   ZIMMessage clone() {
-    var newMessage = _cloneDetail();
-    newMessage.type = type;
-    newMessage.messageID = messageID;
-    newMessage.localMessageID = localMessageID;
-    newMessage.senderUserID = senderUserID;
-    newMessage.conversationID = conversationID;
-    newMessage.direction = direction;
-    newMessage.sentStatus = sentStatus;
-    newMessage.conversationType = conversationType;
-    newMessage.timestamp = timestamp;
-    newMessage.conversationSeq = conversationSeq;
-    newMessage.orderKey = orderKey;
-    newMessage.isUserInserted = isUserInserted;
-    newMessage.receiptStatus = receiptStatus;
-    return newMessage;
+    return _cloneDetail()
+      ..type = type
+      ..messageID = messageID
+      ..localMessageID = localMessageID
+      ..senderUserID = senderUserID
+      ..conversationID = conversationID
+      ..direction = direction
+      ..sentStatus = sentStatus
+      ..conversationType = conversationType
+      ..timestamp = timestamp
+      ..conversationSeq = conversationSeq
+      ..orderKey = orderKey
+      ..isUserInserted = isUserInserted
+      ..receiptStatus = receiptStatus;
   }
 }
 
@@ -130,9 +130,9 @@ extension ZIMImageMessageExtend on ZIMImageMessage {
 
 extension ZIMUserFullInfoExtend on ZIMUserFullInfo {
   // TODO use ValueListenableBuilder
-  // or ZIMUserFullInfo -> ZegoIMKitUser
+  // or ZIMUserFullInfo -> ZIMKitUser
   Widget get icon {
-    Widget placeholder = const Icon(Icons.person);
+    const Widget placeholder = Icon(Icons.person);
     return userAvatarUrl.isEmpty
         ? placeholder
         : CachedNetworkImage(
@@ -166,13 +166,13 @@ extension ZIMConversationExtend on ZIMConversation {
   String get url => conversationAvatarUrl;
   set url(String value) => conversationAvatarUrl = value;
 
-  equal(ZIMConversation other) => id == other.id && type == other.type;
+  bool equal(ZIMConversation other) => id == other.id && type == other.type;
 
   Widget get icon {
     late Widget placeholder;
     switch (type) {
       case ZIMConversationType.peer:
-        return ZegoIMKitAvatar(userID: id);
+        return ZIMKitAvatar(userID: id);
       case ZIMConversationType.room:
         placeholder = const Icon(Icons.room);
         break;
@@ -192,28 +192,60 @@ extension ZIMConversationExtend on ZIMConversation {
   }
 
   ZIMConversation clone() {
-    var newConversation = ZIMConversation();
-    newConversation.conversationID = conversationID;
-    newConversation.conversationName = conversationName;
-    newConversation.conversationAvatarUrl = conversationAvatarUrl;
-    newConversation.type = type;
-    newConversation.notificationStatus = notificationStatus;
-    newConversation.unreadMessageCount = unreadMessageCount;
-    newConversation.lastMessage = lastMessage;
-    newConversation.orderKey = orderKey;
-    return newConversation;
+    return ZIMConversation()
+      ..conversationID = conversationID
+      ..conversationName = conversationName
+      ..conversationAvatarUrl = conversationAvatarUrl
+      ..type = type
+      ..notificationStatus = notificationStatus
+      ..unreadMessageCount = unreadMessageCount
+      ..lastMessage = lastMessage
+      ..orderKey = orderKey;
   }
 
-  ZegoIMKitConversation tokit() => ZegoIMKitConversation(ValueNotifier(this));
+  ZIMKitConversation tokit() => ZIMKitConversation(ValueNotifier(this));
 }
 
 extension ZIMGroupFullInfoExtension on ZIMGroupFullInfo {
   ZIMConversation toConversation() {
-    var newConversation = ZIMConversation();
-    newConversation.id = baseInfo.groupID;
-    newConversation.name = baseInfo.groupName;
-    newConversation.url = baseInfo.groupAvatarUrl;
-    newConversation.type = ZIMConversationType.group;
-    return newConversation;
+    return baseInfo.toConversation();
   }
+
+  String get id => baseInfo.groupID;
+  String get name => baseInfo.groupName;
+  String get url => baseInfo.groupAvatarUrl;
+  String get notice => groupNotice;
+  Map<String, String> get attributes => groupAttributes;
+}
+
+extension ZIMGroupExtension on ZIMGroup {
+  ZIMConversation toConversation() {
+    return ZIMConversation()
+      ..id = baseInfo?.groupID ?? ''
+      ..name = baseInfo?.groupName ?? ''
+      ..url = baseInfo?.groupAvatarUrl ?? ''
+      ..type = ZIMConversationType.group
+      ..notificationStatus =
+          (notificationStatus == ZIMGroupMessageNotificationStatus.notify
+              ? ZIMConversationNotificationStatus.notify
+              : ZIMConversationNotificationStatus.doNotDisturb);
+  }
+
+  String get id => baseInfo?.groupID ?? '';
+  String get name => baseInfo?.groupName ?? '';
+  String get url => baseInfo?.groupAvatarUrl ?? '';
+}
+
+extension ZIMGroupInfoExtension on ZIMGroupInfo {
+  ZIMConversation toConversation() {
+    return ZIMConversation()
+      ..id = groupID
+      ..name = groupName
+      ..url = groupAvatarUrl
+      ..type = ZIMConversationType.group;
+  }
+
+  String get id => groupID;
+  String get name => groupName;
+  String get url => groupAvatarUrl;
 }

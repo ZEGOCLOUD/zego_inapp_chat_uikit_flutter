@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../zego_imkit.dart';
+import 'package:zego_zimkit/zego_zimkit.dart';
 
 // featureList
-class ZegoMessageListView extends StatefulWidget {
-  const ZegoMessageListView({
+class ZIMKitMessageListView extends StatefulWidget {
+  const ZIMKitMessageListView({
     Key? key,
     required this.conversationID,
     this.conversationType = ZIMConversationType.peer,
@@ -24,12 +24,14 @@ class ZegoMessageListView extends StatefulWidget {
 
   final ScrollController? scrollController;
 
-  final void Function(BuildContext context, ZegoIMKitMessage message,
-      Function defaultAction)? onPressed;
-  final void Function(BuildContext context, ZegoIMKitMessage message,
-      Function defaultAction)? onLongPress;
+  final void Function(
+          BuildContext context, ZIMKitMessage message, Function defaultAction)?
+      onPressed;
+  final void Function(
+          BuildContext context, ZIMKitMessage message, Function defaultAction)?
+      onLongPress;
   final Widget Function(
-          BuildContext context, ZegoIMKitMessage message, Widget defaultWidget)?
+          BuildContext context, ZIMKitMessage message, Widget defaultWidget)?
       itemBuilder;
   final Widget Function(BuildContext context, Widget defaultWidget)?
       errorBuilder;
@@ -40,10 +42,10 @@ class ZegoMessageListView extends StatefulWidget {
   final ThemeData? theme;
 
   @override
-  State<ZegoMessageListView> createState() => _ZegoMessageListViewState();
+  State<ZIMKitMessageListView> createState() => _ZIMKitMessageListViewState();
 }
 
-class _ZegoMessageListViewState extends State<ZegoMessageListView> {
+class _ZIMKitMessageListViewState extends State<ZIMKitMessageListView> {
   final ScrollController _defaultScrollController = ScrollController();
   ScrollController get _scrollController =>
       widget.scrollController ?? _defaultScrollController;
@@ -51,16 +53,14 @@ class _ZegoMessageListViewState extends State<ZegoMessageListView> {
   Completer? _loadMoreCompleter;
   @override
   void initState() {
-    ZegoIMKit()
-        .clearUnreadCount(widget.conversationID, widget.conversationType);
+    ZIMKit().clearUnreadCount(widget.conversationID, widget.conversationType);
     _scrollController.addListener(scrollControllerListener);
     super.initState();
   }
 
   @override
   void dispose() {
-    ZegoIMKit()
-        .clearUnreadCount(widget.conversationID, widget.conversationType);
+    ZIMKit().clearUnreadCount(widget.conversationID, widget.conversationType);
     _scrollController.removeListener(scrollControllerListener);
     super.dispose();
   }
@@ -71,7 +71,7 @@ class _ZegoMessageListViewState extends State<ZegoMessageListView> {
           0.8 * _scrollController.position.maxScrollExtent) {
         _loadMoreCompleter = Completer();
         if (0 ==
-            await ZegoIMKit().loadMoreMessage(
+            await ZIMKit().loadMoreMessage(
                 widget.conversationID, widget.conversationType)) {
           _scrollController.removeListener(scrollControllerListener);
         }
@@ -86,36 +86,34 @@ class _ZegoMessageListViewState extends State<ZegoMessageListView> {
       data: widget.theme ?? Theme.of(context),
       child: Expanded(
         child: FutureBuilder(
-          future: ZegoIMKit().getMessageListNotifier(
+          future: ZIMKit().getMessageListNotifier(
               widget.conversationID, widget.conversationType),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               return ValueListenableBuilder(
                 valueListenable:
-                    snapshot.data as ValueNotifier<List<ZegoIMKitMessage>>,
-                builder: (BuildContext context,
-                    List<ZegoIMKitMessage> messageList, Widget? child) {
-                  ZegoIMKit().clearUnreadCount(
+                    snapshot.data! as ValueNotifier<List<ZIMKitMessage>>,
+                builder: (BuildContext context, List<ZIMKitMessage> messageList,
+                    Widget? child) {
+                  ZIMKit().clearUnreadCount(
                       widget.conversationID, widget.conversationType);
                   return LayoutBuilder(
                       builder: (context, BoxConstraints constraints) {
-                    ZegoIMKitLogger.fine(
-                        'messageList constraints: $constraints');
                     return ListView.builder(
                       cacheExtent: constraints.maxHeight * 3,
                       reverse: true,
                       controller: _scrollController,
                       itemCount: messageList.length,
                       itemBuilder: (context, index) {
-                        int reversedIndex = messageList.length - index - 1;
-                        ZegoIMKitMessage message = messageList[reversedIndex];
+                        final reversedIndex = messageList.length - index - 1;
+                        final message = messageList[reversedIndex];
                         // defaultWidget
-                        Widget defaultWidget = ConstrainedBox(
+                        final Widget defaultWidget = ConstrainedBox(
                           constraints: BoxConstraints(
                             maxWidth: constraints.maxWidth,
                             maxHeight: constraints.maxHeight * 0.5,
                           ),
-                          child: ZegoIMKitMessageWidget(
+                          child: ZIMKitMessageWidget(
                             key: ValueKey(message.hashCode),
                             message: message,
                             onPressed: widget.onPressed,
@@ -136,7 +134,7 @@ class _ZegoMessageListViewState extends State<ZegoMessageListView> {
             } else if (snapshot.hasError) {
               // TODO 未实现加载失败
               // defaultWidget
-              Widget defaultWidget = Center(
+              final Widget defaultWidget = Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -158,8 +156,8 @@ class _ZegoMessageListViewState extends State<ZegoMessageListView> {
               );
             } else {
               // defaultWidget
-              Widget defaultWidget =
-                  const Center(child: CircularProgressIndicator());
+              const Widget defaultWidget =
+                  Center(child: CircularProgressIndicator());
 
               // customWidget
               return widget.loadingBuilder?.call(context, defaultWidget) ??

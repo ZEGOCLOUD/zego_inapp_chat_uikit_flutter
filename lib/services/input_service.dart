@@ -1,25 +1,36 @@
 part of 'services.dart';
 
-mixin ZegoInputService {
-  Future<List<PlatformFile>> pickFiles({FileType type = FileType.any, bool allowMultiple = true}) async {
+mixin ZIMKitInputService {
+  Future<List<PlatformFile>> pickFiles(
+      {FileType type = FileType.any, bool allowMultiple = true}) async {
     try {
-      zegoIMKitRequestPermission(Permission.storage);
+      requestPermission(Permission.storage);
       // see https://github.com/miguelpruivo/flutter_file_picker/wiki/API#-filepickerpickfiles
-      return (await FilePicker.platform.pickFiles(type: type, allowMultiple: allowMultiple))?.files ?? [];
+      return (await FilePicker.platform
+                  .pickFiles(type: type, allowMultiple: allowMultiple))
+              ?.files ??
+          [];
     } on PlatformException catch (e) {
-      ZegoIMKitLogger.severe('Unsupported operation $e');
+      ZIMKitLogger.severe('Unsupported operation $e');
     } catch (e) {
-      ZegoIMKitLogger.severe(e.toString());
+      ZIMKitLogger.severe(e.toString());
     }
     return [];
   }
 
   ZIMMessageType getMessageTypeByFileExtension(PlatformFile file) {
-    const List<String> supportImageList = ['jpg', 'jpeg', 'png', 'bmp', 'gif', 'tiff']; // <10M
-    const List<String> supportVideoList = ['mp4', 'mov']; // <100M
-    const List<String> supportAudioList = ['mp3', 'm4a']; // <300s, <6M
+    const supportImageList = <String>[
+      'jpg',
+      'jpeg',
+      'png',
+      'bmp',
+      'gif',
+      'tiff'
+    ]; // <10M
+    const supportVideoList = <String>['mp4', 'mov']; // <100M
+    const supportAudioList = <String>['mp3', 'm4a']; // <300s, <6M
 
-    ZIMMessageType messageType = ZIMMessageType.file;
+    var messageType = ZIMMessageType.file;
 
     if (supportImageList.contains(file.extension)) {
       messageType = ZIMMessageType.image;
@@ -31,5 +42,19 @@ mixin ZegoInputService {
 
     // TODO check file limit
     return messageType;
+  }
+
+  Future<bool> requestPermission(Permission permission) async {
+    if (defaultTargetPlatform == TargetPlatform.macOS) {
+      return true;
+    }
+    final status = await permission.request();
+    if (status != PermissionStatus.granted) {
+      ZIMKitLogger.severe(
+          'Error: ${permission.toString()} permission not granted, $status');
+      return false;
+    }
+
+    return true;
   }
 }

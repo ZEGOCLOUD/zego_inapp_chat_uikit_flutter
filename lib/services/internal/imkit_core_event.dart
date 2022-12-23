@@ -1,37 +1,51 @@
 import 'package:zego_zim/zego_zim.dart';
-import 'imkit_core.dart';
 
-mixin ZegoIMKitCoreEvent {
+import 'package:zego_zimkit/services/internal/imkit_core.dart';
+
+mixin ZIMKitCoreEvent {
   void initEventHandler() {
-    ZegoIMKitLogger.info("register event handle.");
+    ZIMKitLogger.info('register event handle.');
 
     /*Main*/
-    ZIMEventHandler.onError = ZegoIMKitCore.instance.coreData.onError;
-    ZIMEventHandler.onTokenWillExpire = ZegoIMKitCore.instance.coreData.onTokenWillExpire;
-    ZIMEventHandler.onConnectionStateChanged = ZegoIMKitCore.instance.coreData.onConnectionStateChanged;
+    ZIMEventHandler.onError = ZIMKitCore.instance.coreData.onError;
+    ZIMEventHandler.onTokenWillExpire =
+        ZIMKitCore.instance.coreData.onTokenWillExpire;
+    ZIMEventHandler.onConnectionStateChanged =
+        ZIMKitCore.instance.coreData.onConnectionStateChanged;
 
     /*Conversation*/
-    ZIMEventHandler.onConversationChanged = ZegoIMKitCore.instance.coreData.onConversationChanged;
-    ZIMEventHandler.onConversationTotalUnreadMessageCountUpdated =
-        ZegoIMKitCore.instance.coreData.onConversationTotalUnreadMessageCountUpdated;
+    ZIMEventHandler.onConversationChanged =
+        ZIMKitCore.instance.coreData.onConversationChanged;
+    ZIMEventHandler.onConversationTotalUnreadMessageCountUpdated = ZIMKitCore
+        .instance.coreData.onConversationTotalUnreadMessageCountUpdated;
 
     /*Message*/
-    ZIMEventHandler.onReceivePeerMessage = ZegoIMKitCore.instance.coreData.onReceivePeerMessage;
-    ZIMEventHandler.onReceiveRoomMessage = ZegoIMKitCore.instance.coreData.onReceiveRoomMessage;
-    ZIMEventHandler.onReceiveGroupMessage = ZegoIMKitCore.instance.coreData.onReceiveGroupMessage;
+    ZIMEventHandler.onReceivePeerMessage =
+        ZIMKitCore.instance.coreData.onReceivePeerMessage;
+    ZIMEventHandler.onReceiveRoomMessage =
+        ZIMKitCore.instance.coreData.onReceiveRoomMessage;
+    ZIMEventHandler.onReceiveGroupMessage =
+        ZIMKitCore.instance.coreData.onReceiveGroupMessage;
 
     /*Group*/
-    ZIMEventHandler.onGroupStateChanged = ZegoIMKitCore.instance.coreData.onGroupStateChanged;
-    ZIMEventHandler.onGroupNameUpdated = ZegoIMKitCore.instance.coreData.onGroupNameUpdated;
-    ZIMEventHandler.onGroupAvatarUrlUpdated = ZegoIMKitCore.instance.coreData.onGroupAvatarUrlUpdated;
-    ZIMEventHandler.onGroupNoticeUpdated = ZegoIMKitCore.instance.coreData.onGroupNoticeUpdated;
-    ZIMEventHandler.onGroupAttributesUpdated = ZegoIMKitCore.instance.coreData.onGroupAttributesUpdated;
-    ZIMEventHandler.onGroupMemberStateChanged = ZegoIMKitCore.instance.coreData.onGroupMemberStateChanged;
-    ZIMEventHandler.onGroupMemberInfoUpdated = ZegoIMKitCore.instance.coreData.onGroupMemberInfoUpdated;
+    ZIMEventHandler.onGroupStateChanged =
+        ZIMKitCore.instance.coreData.onGroupStateChanged;
+    ZIMEventHandler.onGroupNameUpdated =
+        ZIMKitCore.instance.coreData.onGroupNameUpdated;
+    ZIMEventHandler.onGroupAvatarUrlUpdated =
+        ZIMKitCore.instance.coreData.onGroupAvatarUrlUpdated;
+    ZIMEventHandler.onGroupNoticeUpdated =
+        ZIMKitCore.instance.coreData.onGroupNoticeUpdated;
+    ZIMEventHandler.onGroupAttributesUpdated =
+        ZIMKitCore.instance.coreData.onGroupAttributesUpdated;
+    ZIMEventHandler.onGroupMemberStateChanged =
+        ZIMKitCore.instance.coreData.onGroupMemberStateChanged;
+    ZIMEventHandler.onGroupMemberInfoUpdated =
+        ZIMKitCore.instance.coreData.onGroupMemberInfoUpdated;
   }
 
   void uninitEventHandler() {
-    ZegoIMKitLogger.info("unregister event handle.");
+    ZIMKitLogger.info('unregister event handle.');
     ZIMEventHandler.onError = null;
     ZIMEventHandler.onTokenWillExpire = null;
     ZIMEventHandler.onConversationChanged = null;

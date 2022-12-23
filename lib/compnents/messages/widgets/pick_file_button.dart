@@ -1,12 +1,13 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:zego_imkit/zego_imkit.dart';
+
+import 'package:file_picker/file_picker.dart';
+
+import 'package:zego_zimkit/zego_zimkit.dart';
 
 export 'package:file_picker/file_picker.dart';
 
-class ZegoIMKitPickFileButton extends StatelessWidget {
-  const ZegoIMKitPickFileButton(
-      {Key? key, required this.onFilePicked, this.icon})
+class ZIMKitPickFileButton extends StatelessWidget {
+  const ZIMKitPickFileButton({Key? key, required this.onFilePicked, this.icon})
       : super(key: key);
 
   final Function(List<PlatformFile> files) onFilePicked;
@@ -16,9 +17,7 @@ class ZegoIMKitPickFileButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: () async {
-        ZegoIMKit()
-            .pickFiles()
-            .then((pickedFiles) => onFilePicked(pickedFiles));
+        ZIMKit().pickFiles().then(onFilePicked);
       },
       icon: icon ??
           Icon(

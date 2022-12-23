@@ -1,15 +1,15 @@
-import 'package:zego_imkit/zego_imkit.dart';
+import 'package:zego_zimkit/zego_zimkit.dart';
 
-class ZegoIMKitDB {
-  ZegoIMKitConversationList conversations = ZegoIMKitConversationList();
-  ZegoIMKitMessageList messages(String id, ZIMConversationType type) {
+class ZIMKitDB {
+  ZIMKitConversationList conversations = ZIMKitConversationList();
+  ZIMKitMessageList messages(String id, ZIMConversationType type) {
     _messageList[type] ??= {};
-    _messageList[type]![id] ??= ZegoIMKitMessageList();
+    _messageList[type]![id] ??= ZIMKitMessageList();
     return _messageList[type]![id]!;
   }
 
-  final Map<ZIMConversationType, Map<String, ZegoIMKitMessageList>>
-      _messageList = {};
+  final Map<ZIMConversationType, Map<String, ZIMKitMessageList>> _messageList =
+      {};
 
   void clear() {
     // todo 测试切换账号
@@ -19,9 +19,9 @@ class ZegoIMKitDB {
   }
 }
 
-class ZegoIMKitConversationList {
+class ZIMKitConversationList {
   bool inited = false;
-  get notInited => !inited;
+  bool get notInited => !inited;
 
   bool hasMore = true;
   bool get noMore => !hasMore;
@@ -29,7 +29,7 @@ class ZegoIMKitConversationList {
 
   bool loading = false;
 
-  ListNotifier<ZegoIMKitConversation> data = ListNotifier([]);
+  ListNotifier<ZIMKitConversation> data = ListNotifier([]);
 
   void init(List<ZIMConversation> zimConversationList) {
     data.value = zimConversationList.map((e) => e.tokit()).toList();
@@ -45,9 +45,9 @@ class ZegoIMKitConversationList {
     hasMore = true;
   }
 
-  ZegoIMKitConversation get(String id, ZIMConversationType type) {
-    ZegoIMKitConversation? ret;
-    for (int i = 0; i < data.length; i++) {
+  ZIMKitConversation get(String id, ZIMConversationType type) {
+    ZIMKitConversation? ret;
+    for (var i = 0; i < data.length; i++) {
       if (data[i].equal2(id, type)) {
         ret = data[i];
         break;
@@ -55,16 +55,16 @@ class ZegoIMKitConversationList {
     }
 
     if (ret == null) {
-      var zimConversation = ZIMConversation();
-      zimConversation.id = id;
-      zimConversation.type = type;
+      final zimConversation = ZIMConversation()
+        ..id = id
+        ..type = type;
       data.value.insert(0, zimConversation.tokit());
       ret = get(id, type);
       if (type == ZIMConversationType.peer) {
-        ZegoIMKit().queryUser(id).then((ZIMUserFullInfo zimResult) {
-          ZIMConversation newConversation = ret!.data.value.clone();
-          newConversation.name = zimResult.baseInfo.userName;
-          newConversation.url = zimResult.userAvatarUrl;
+        ZIMKit().queryUser(id).then((ZIMUserFullInfo zimResult) {
+          final newConversation = ret!.data.value.clone()
+            ..name = zimResult.baseInfo.userName
+            ..url = zimResult.userAvatarUrl;
           ret.data.value = newConversation;
         });
       }
@@ -78,7 +78,7 @@ class ZegoIMKitConversationList {
   }
 
   void delete(String id, ZIMConversationType type) {
-    data.removeWhere((ZegoIMKitConversation element) {
+    data.removeWhere((ZIMKitConversation element) {
       if (element.equal2(id, type)) {
         return true;
       } else {
@@ -95,7 +95,7 @@ class ZegoIMKitConversationList {
   }
 
   bool update(ZIMConversation zimConversation) {
-    for (int i = 0; i < data.length; i++) {
+    for (var i = 0; i < data.length; i++) {
       if (data[i].equal(zimConversation)) {
         data[i] = zimConversation.tokit();
         return true;
@@ -105,7 +105,7 @@ class ZegoIMKitConversationList {
   }
 
   void disable(ZIMConversation zimConversation) {
-    for (int i = 0; i < data.length; i++) {
+    for (var i = 0; i < data.length; i++) {
       if (data[i].equal(zimConversation)) {
         data[i].disable = true;
         break;
@@ -118,17 +118,17 @@ class ZegoIMKitConversationList {
   }
 }
 
-extension ZegoIMKitConversationExtension on ZegoIMKitConversation {
-  equal(ZIMConversation zimConversation) =>
+extension ZIMKitConversationExtension on ZIMKitConversation {
+  dynamic equal(ZIMConversation zimConversation) =>
       equal2(zimConversation.id, zimConversation.type);
-  equal2(String id, ZIMConversationType type) =>
+  bool equal2(String id, ZIMConversationType type) =>
       (data.value.id == id) && (data.value.type == type);
 }
 
-class ZegoIMKitMessageList {
-  ListNotifier<ZegoIMKitMessage> data = ListNotifier([]);
+class ZIMKitMessageList {
+  ListNotifier<ZIMKitMessage> data = ListNotifier([]);
   bool inited = false;
-  get notInited => !inited;
+  bool get notInited => !inited;
 
   bool hasMore = true;
   bool get noMore => !hasMore;
@@ -158,10 +158,10 @@ class ZegoIMKitMessageList {
     data.insertAll(0, receiveMessages.map((e) => e.tokit()));
   }
 
-  void attach(ZegoIMKitMessage kitMessage) => data.add(kitMessage);
+  void attach(ZIMKitMessage kitMessage) => data.add(kitMessage);
 }
 
-extension ZegoIMKitMessageExtension on ZegoIMKitMessage {
+extension ZIMKitMessageExtension on ZIMKitMessage {
   void updateExtraInfo(Map map) =>
       extraInfo.value = Map.from(extraInfo.value)..addAll(map);
 
@@ -169,9 +169,7 @@ extension ZegoIMKitMessageExtension on ZegoIMKitMessage {
     data.value = (data.value.clone()..sentStatus = ZIMMessageSentStatus.failed);
   }
 
-  void download() => ZegoIMKit().downloadMediaFile(this);
-
-  void uploadDone(ZIMMessage zimMessage) => data.value = zimMessage;
+  void download() => ZIMKit().downloadMediaFile(this);
 
   void downloadDone(ZIMMediaFileType downloadType, ZIMMessage zimMessage) {
     switch (downloadType) {

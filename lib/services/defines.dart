@@ -1,12 +1,13 @@
 import 'package:flutter/widgets.dart';
-import 'package:zego_imkit/zego_imkit.dart';
+
+import 'package:zego_zimkit/zego_zimkit.dart';
+
 export 'package:zego_zim/zego_zim.dart';
 
-class ZegoIMKitConversation {
+class ZIMKitConversation {
+  ZIMKitConversation(this.data);
   ValueNotifier<ZIMConversation> data;
   bool disable = false;
-
-  ZegoIMKitConversation(this.data);
 
   String get id => data.value.id;
   ZIMConversationType get type => data.value.type;
@@ -14,17 +15,16 @@ class ZegoIMKitConversation {
   String get url => data.value.url;
   Widget get icon => data.value.icon;
   int get unreadMessageCount => data.value.unreadMessageCount;
-  get zim => data.value;
+  ZIMConversation get zim => data.value;
 }
 
-class ZegoIMKitMessage {
+class ZIMKitMessage {
+  ZIMKitMessage(this.data);
   ValueNotifier<ZIMMessage> data;
   ValueNotifier<Map> extraInfo = ValueNotifier({});
 
-  ZegoIMKitMessage(this.data);
-
-  get isSender => data.value.isSender;
-  get tostr => data.value.tostr();
-  get senderUserID => data.value.senderUserID;
-  get zim => data.value;
+  dynamic get isSender => data.value.isSender;
+  String get tostr => data.value.tostr();
+  String get senderUserID => data.value.senderUserID;
+  ZIMMessage get zim => data.value;
 }

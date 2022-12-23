@@ -1,19 +1,20 @@
 part of 'services.dart';
 
-mixin ZegoUserService {
-  Future<int> login({required String id, String name = ''}) async {
-    return await ZegoIMKitCore.instance.login(id: id, name: name);
+mixin ZIMKitUserService {
+  Future<int> connectUser(
+      {required String id, String name = '', String token = ''}) async {
+    return ZIMKitCore.instance.connectUser(id: id, name: name, token: token);
   }
 
-  Future<void> logout() async {
-    return await ZegoIMKitCore.instance.logout();
+  Future<void> disconnectUser() async {
+    return ZIMKitCore.instance.disconnectUser();
   }
 
   ZIMUserFullInfo? currentUser() {
-    return ZegoIMKitCore.instance.coreData.loginUser;
+    return ZIMKitCore.instance.coreData.currentUser;
   }
 
   Future<ZIMUserFullInfo> queryUser(String id) async {
-    return await ZegoIMKitCore.instance.coreData.queryUser(id);
+    return ZIMKitCore.instance.coreData.queryUser(id);
   }
 }

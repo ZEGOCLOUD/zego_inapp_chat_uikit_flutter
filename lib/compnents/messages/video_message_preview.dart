@@ -1,14 +1,15 @@
 import 'dart:io';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import 'package:zego_imkit/services/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-class ZegoVideoMessagePreview extends StatelessWidget {
-  const ZegoVideoMessagePreview(this.message, {Key? key}) : super(key: key);
+import 'package:zego_zimkit/services/services.dart';
 
-  final ZegoIMKitMessage message;
+class ZIMKitVideoMessagePreview extends StatelessWidget {
+  const ZIMKitVideoMessagePreview(this.message, {Key? key}) : super(key: key);
+
+  final ZIMKitMessage message;
 
   @override
   Widget build(BuildContext context) {

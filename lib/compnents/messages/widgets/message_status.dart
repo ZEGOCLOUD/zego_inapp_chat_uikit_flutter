@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../services/services.dart';
+import 'package:zego_zimkit/services/services.dart';
 
-class ZegoMessageStatusDot extends StatelessWidget {
-  final ZegoIMKitMessage message;
-  const ZegoMessageStatusDot(this.message, {Key? key}) : super(key: key);
+class ZIMKitMessageStatusDot extends StatelessWidget {
+  const ZIMKitMessageStatusDot(this.message, {Key? key}) : super(key: key);
+  final ZIMKitMessage message;
 
   Color dotColor(BuildContext context, ZIMMessageSentStatus status) {
     switch (status) {
@@ -33,7 +33,9 @@ class ZegoMessageStatusDot extends StatelessWidget {
             shape: BoxShape.circle,
           ),
           child: Icon(
-            message.sentStatus == ZIMMessageSentStatus.failed ? Icons.close : Icons.done,
+            message.sentStatus == ZIMMessageSentStatus.failed
+                ? Icons.close
+                : Icons.done,
             size: 8,
             color: Theme.of(context).scaffoldBackgroundColor,
           ),

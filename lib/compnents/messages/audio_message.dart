@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:zego_imkit/services/services.dart';
 
-class ZegoAudioMessage extends StatelessWidget {
-  const ZegoAudioMessage({
+import 'package:zego_zimkit/services/services.dart';
+
+class ZIMKitAudioMessage extends StatelessWidget {
+  const ZIMKitAudioMessage({
     Key? key,
     required this.message,
     this.onPressed,
     this.onLongPress,
   }) : super(key: key);
 
-  final ZegoIMKitMessage message;
-  final void Function(BuildContext context, ZegoIMKitMessage message,
-      Function defaultAction)? onPressed;
-  final void Function(BuildContext context, ZegoIMKitMessage message,
-      Function defaultAction)? onLongPress;
+  final ZIMKitMessage message;
+  final void Function(
+          BuildContext context, ZIMKitMessage message, Function defaultAction)?
+      onPressed;
+  final void Function(
+          BuildContext context, ZIMKitMessage message, Function defaultAction)?
+      onLongPress;
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ZIMMessage>(
       valueListenable: message.data,
       builder: (context, ZIMMessage msg, child) {
-        ZIMAudioMessage message = msg as ZIMAudioMessage;
+        final message = msg as ZIMAudioMessage;
         return Flexible(
           child: GestureDetector(
             // TODO play audio

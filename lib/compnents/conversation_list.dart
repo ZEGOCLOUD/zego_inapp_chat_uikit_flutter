@@ -2,12 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:zego_imkit/zego_imkit.dart';
+
+import 'package:zego_zimkit/zego_zimkit.dart';
 
 export 'conversation_list.dart';
 
-class ZegoConversationListView extends StatefulWidget {
-  const ZegoConversationListView({
+class ZIMKitConversationListView extends StatefulWidget {
+  const ZIMKitConversationListView({
     Key? key,
     this.filter,
     this.sorter,
@@ -24,15 +25,18 @@ class ZegoConversationListView extends StatefulWidget {
   }) : super(key: key);
 
   // logic function
-  final List<ZegoIMKitConversation> Function(
-      BuildContext context, List<ZegoIMKitConversation>)? filter;
-  final List<ZegoIMKitConversation> Function(
-      BuildContext context, List<ZegoIMKitConversation>)? sorter;
+  final List<ZIMKitConversation> Function(
+      BuildContext context, List<ZIMKitConversation>)? filter;
+  final List<ZIMKitConversation> Function(
+      BuildContext context, List<ZIMKitConversation>)? sorter;
 
   // item event
-  final void Function(BuildContext context, ZegoIMKitConversation conversation,
+  final void Function(BuildContext context, ZIMKitConversation conversation,
       Function defaultAction)? onPressed;
-  final void Function(BuildContext context, ZegoIMKitConversation conversation,
+  final void Function(
+      BuildContext context,
+      ZIMKitConversation conversation,
+      LongPressDownDetails longPressDownDetails,
       Function defaultAction)? onLongPress;
 
   // ui builder
@@ -52,8 +56,8 @@ class ZegoConversationListView extends StatefulWidget {
       lastMessageBuilder;
 
   // item builder
-  final Widget Function(BuildContext context,
-      ZegoIMKitConversation conversation, Widget defaultWidget)? itemBuilder;
+  final Widget Function(BuildContext context, ZIMKitConversation conversation,
+      Widget defaultWidget)? itemBuilder;
 
   // scroll controller
   final ScrollController? scrollController;
@@ -62,11 +66,12 @@ class ZegoConversationListView extends StatefulWidget {
   final ThemeData? theme;
 
   @override
-  State<ZegoConversationListView> createState() =>
-      _ZegoConversationListViewState();
+  State<ZIMKitConversationListView> createState() =>
+      _ZIMKitConversationListViewState();
 }
 
-class _ZegoConversationListViewState extends State<ZegoConversationListView> {
+class _ZIMKitConversationListViewState
+    extends State<ZIMKitConversationListView> {
   final ScrollController _defaultScrollController = ScrollController();
   ScrollController get _scrollController =>
       widget.scrollController ?? _defaultScrollController;
@@ -88,7 +93,7 @@ class _ZegoConversationListViewState extends State<ZegoConversationListView> {
       if (_scrollController.position.pixels >=
           0.8 * _scrollController.position.maxScrollExtent) {
         _loadMoreCompleter = Completer();
-        if (0 == await ZegoIMKit().loadMoreConversation()) {
+        if (0 == await ZIMKit().loadMoreConversation()) {
           _scrollController.removeListener(scrollControllerListener);
         }
         _loadMoreCompleter!.complete();
@@ -101,14 +106,19 @@ class _ZegoConversationListViewState extends State<ZegoConversationListView> {
     return Theme(
       data: widget.theme ?? Theme.of(context),
       child: FutureBuilder(
-        future: ZegoIMKit().getConversationListNotifier(),
+        future: ZIMKit().getConversationListNotifier(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             return ValueListenableBuilder(
               valueListenable:
-                  snapshot.data as ValueNotifier<List<ZegoIMKitConversation>>,
+                  snapshot.data! as ValueNotifier<List<ZIMKitConversation>>,
               builder: (BuildContext context,
-                  List<ZegoIMKitConversation> conversationList, Widget? child) {
+                  List<ZIMKitConversation> conversationList, Widget? child) {
+                if (conversationList.isEmpty) {
+                  return widget.emptyBuilder
+                          ?.call(context, const SizedBox.shrink()) ??
+                      const SizedBox.shrink();
+                }
                 conversationList =
                     widget.sorter?.call(context, conversationList) ??
                         conversationList;
@@ -122,18 +132,18 @@ class _ZegoConversationListViewState extends State<ZegoConversationListView> {
                       controller: _scrollController,
                       itemCount: conversationList.length,
                       itemBuilder: (context, index) {
-                        var conversation = conversationList[index];
+                        final conversation = conversationList[index];
                         // defaultAction
 
                         // defaultWidget
-                        Widget defaultWidget = ZegoConversationWidget(
+                        final Widget defaultWidget = ZIMKitConversationWidget(
                           conversationID: conversationList[index].id,
                           conversationType: conversationList[index].type,
                           lastMessageTimeBuilder: widget.lastMessageTimeBuilder,
                           lastMessageBuilder: widget.lastMessageBuilder,
                           onLongPress: (BuildContext context,
                               LongPressDownDetails longPressDownDetails) {
-                            onLongPressDefaultAction() =>
+                            void onLongPressDefaultAction() =>
                                 _onLongPressDefaultAction(
                                     context,
                                     longPressDownDetails,
@@ -143,16 +153,17 @@ class _ZegoConversationListViewState extends State<ZegoConversationListView> {
                               widget.onLongPress!(
                                   context,
                                   conversationList[index],
+                                  longPressDownDetails,
                                   onLongPressDefaultAction);
                             } else {
                               onLongPressDefaultAction();
                             }
                           },
                           onPressed: (BuildContext context) {
-                            onPressedDefaultAction() {
+                            void onPressedDefaultAction() {
                               Navigator.push(context, MaterialPageRoute(
                                 builder: (context) {
-                                  return ZegoMessageListPage(
+                                  return ZIMKitMessageListPage(
                                     conversationID: conversation.id,
                                     conversationType: conversation.type,
                                     theme: widget.theme,
@@ -184,7 +195,7 @@ class _ZegoConversationListViewState extends State<ZegoConversationListView> {
             );
           } else if (snapshot.hasError) {
             // defaultWidget
-            Widget defaultWidget = Center(
+            final Widget defaultWidget = Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -205,8 +216,8 @@ class _ZegoConversationListViewState extends State<ZegoConversationListView> {
             );
           } else {
             // defaultWidget
-            Widget defaultWidget =
-                const Center(child: CircularProgressIndicator());
+            const Widget defaultWidget =
+                Center(child: CircularProgressIndicator());
 
             // customWidget
             return widget.loadingBuilder?.call(context, defaultWidget) ??
@@ -219,10 +230,10 @@ class _ZegoConversationListViewState extends State<ZegoConversationListView> {
 
   void _onLongPressDefaultAction(
       context, LongPressDownDetails longPressDownDetails, id, type) {
-    final RenderBox conversationBox = context.findRenderObject()! as RenderBox;
-    var offset = conversationBox
+    final conversationBox = context.findRenderObject()! as RenderBox;
+    final offset = conversationBox
         .localToGlobal(Offset(0, conversationBox.size.height / 2));
-    final RelativeRect position = RelativeRect.fromLTRB(
+    final position = RelativeRect.fromLTRB(
       longPressDownDetails.globalPosition.dx,
       offset.dy,
       longPressDownDetails.globalPosition.dx,
@@ -249,7 +260,7 @@ class _ZegoConversationListViewState extends State<ZegoConversationListView> {
                   ),
                   TextButton(
                     onPressed: () {
-                      ZegoIMKit().deleteConversation(id, type);
+                      ZIMKit().deleteConversation(id, type);
                       Navigator.pop(context);
                     },
                     child: const Text('OK'),
@@ -273,7 +284,7 @@ class _ZegoConversationListViewState extends State<ZegoConversationListView> {
                   ),
                   TextButton(
                     onPressed: () {
-                      ZegoIMKit().leaveGroup(id);
+                      ZIMKit().leaveGroup(id);
                       Navigator.pop(context);
                     },
                     child: const Text('OK'),
@@ -287,3 +298,5 @@ class _ZegoConversationListViewState extends State<ZegoConversationListView> {
     });
   }
 }
+
+// TODO Pass the messageListPage config

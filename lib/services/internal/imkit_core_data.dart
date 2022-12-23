@@ -1,190 +1,214 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:zego_imkit/zego_imkit.dart';
+
 import 'package:async/async.dart';
-import 'imkit_core_defines.dart';
+
+import 'package:zego_zimkit/services/internal/imkit_core_defines.dart';
+import 'package:zego_zimkit/zego_zimkit.dart';
 
 const int kdefaultLoadCount = 30; // default is 30
-const bool kEnableAutoDownload = false; // default is 30
+const bool kEnableAutoDownload = true; // TODO use flutter cache manager
 
-class ZegoIMKitCoreData {
+class ZIMKitCoreData {
   int appID = 0;
   String appSign = '';
   String appSecret = '';
   bool useToken = false;
 
   bool isInited = false;
-  ZIMUserFullInfo? loginUser;
+  ZIMUserFullInfo? currentUser;
 
-  Completer? connectionStateWaiter;
-  var connectionState = ZIMConnectionState.disconnected;
-  var connectionStateCtrl = StreamController<Map>.broadcast();
+  Completer? loginCompleter;
+  ZIMConnectionState connectionState = ZIMConnectionState.disconnected;
+  StreamController<Map> connectionStateCtrl = StreamController<Map>.broadcast();
 
-  ZegoIMKitDB db = ZegoIMKitDB();
+  ZIMKitDB db = ZIMKitDB();
 
   Future<String> getVersion() async {
-    var zimVersion = await ZIM.getVersion();
+    final zimVersion = await ZIM.getVersion();
     return 'imkit:0.1.1;zim:$zimVersion';
   }
 
   void clear() {
     connectionState = ZIMConnectionState.disconnected;
     db.clear();
-    loginUser = null;
+    currentUser = null;
   }
 
   Future<void> init({
     required int appID,
     String appSign = '',
     String appSecret = '',
-    bool useToken = false,
   }) async {
     this.appID = appID;
     this.appSign = appSign;
     this.appSecret = appSecret;
-    this.useToken = useToken;
 
     if (isInited) {
-      ZegoIMKitLogger.info("has inited.");
+      ZIMKitLogger.info('has inited.');
       return;
     }
 
-    ZegoIMKitLogger.info('init, appID:$appID');
+    ZIMKitLogger.info('init, appID:$appID');
     isInited = true;
 
-    var appConfig = ZIMAppConfig();
-    appConfig.appID = appID;
-    appConfig.appSign = appSign;
+    final appConfig = ZIMAppConfig()
+      ..appID = appID
+      ..appSign = appSign;
     ZIM.create(appConfig);
 
     getVersion().then((value) {
-      ZegoIMKitLogger.info("Zego IM SDK version: $value");
+      ZIMKitLogger.info('Zego IM SDK version: $value');
     });
   }
 
   Future<void> uninit() async {
     if (!isInited) {
-      ZegoIMKitLogger.info("is not inited.");
+      ZIMKitLogger.info('is not inited.');
       return;
     }
-    ZegoIMKitLogger.info("destroy.");
+    ZIMKitLogger.info('destroy.');
     isInited = false;
-    await logout();
+    await disconnectUser();
     ZIM.getInstance()?.destroy();
   }
 
-  Future<int> tryReloginOrNot(error) async {
+  Future<int> tryReloginOrNot(Exception error) async {
     if (error is PlatformException &&
-        error.code == ZIMErrorCode.networkModuleUserIsNotLogged.toString() &&
-        loginUser != null) {
-      ZegoIMKitLogger.info("try auto relogin.");
-      return await login(
-          id: loginUser!.baseInfo.userID, name: loginUser!.baseInfo.userName);
+        int.parse(error.code) == ZIMErrorCode.networkModuleUserIsNotLogged &&
+        currentUser != null) {
+      ZIMKitLogger.info('try auto relogin.');
+      return connectUser(
+          id: currentUser!.baseInfo.userID,
+          name: currentUser!.baseInfo.userName);
     } else {
       return -1;
     }
   }
 
-  Future<int> login({required String id, String name = ''}) async {
+  Future<int> connectUser(
+      {required String id, String name = '', String token = ''}) async {
     if (!isInited) {
-      ZegoIMKitLogger.info("is not inited.");
-      throw Exception("ZegoIMKit is not inited.");
+      ZIMKitLogger.info('is not inited.');
+      throw Exception('ZIMKit is not inited.');
     }
-    if (loginUser != null) {
-      ZegoIMKitLogger.info("has login, auto logout");
-      await logout();
+    if (currentUser != null) {
+      ZIMKitLogger.info('has login, auto logout');
+      await disconnectUser();
     }
 
-    ZegoIMKitLogger.info("login request, user id:$id, user name:$name");
-    loginUser = ZIMUserFullInfo();
-    loginUser!.baseInfo.userID = id;
-    loginUser!.baseInfo.userName = name.isNotEmpty ? name : id;
+    ZIMKitLogger.info('login request, user id:$id, user name:$name');
+    currentUser = ZIMUserFullInfo()
+      ..baseInfo.userID = id
+      ..baseInfo.userName = name.isNotEmpty ? name : id;
 
-    ZegoIMKitLogger.info("ready to login..");
-    String? token = (useToken || kIsWeb)
-        ? await ZegoTokenUtils.generateZegoToken(appID, appSecret, id)
-        : null;
-    return ZIM.getInstance()!.login(loginUser!.baseInfo, token).then((value) {
-      ZegoIMKitLogger.info('login success');
+    ZIMKitLogger.info('ready to login..');
+    final _token = token.isNotEmpty
+        ? token
+        : (appSign.isEmpty || kIsWeb)
+            ? await ZIMKitTokenUtils.generateZIMKitToken(appID, appSecret, id)
+            : null;
+    return ZIM
+        .getInstance()!
+        .login(currentUser!.baseInfo, _token)
+        .then((value) {
+      ZIMKitLogger.info('login success');
 
-      // query loginUser's full info
-      queryUser(loginUser!.baseInfo.userID).then((ZIMUserFullInfo value) {
-        loginUser = value;
+      // query currentUser's full info
+      queryUser(currentUser!.baseInfo.userID).then((ZIMUserFullInfo zimResult) {
+        currentUser = zimResult;
+        loginCompleter?.complete();
       });
 
       return 0;
     }).catchError((error, stackTrace) {
-      ZegoIMKitLogger.info('login error, $error');
+      ZIMKitLogger.info('login error, $error');
       return int.parse((error as PlatformException).code);
     });
   }
 
-  Future<void> logout() async {
-    ZegoIMKitLogger.info("logout.");
+  Future<void> disconnectUser() async {
+    ZIMKitLogger.info('logout.');
     clear();
     ZIM.getInstance()!.logout();
 
     // waitForDisconnect
     if (connectionState != ZIMConnectionState.disconnected) {
-      var completer = Completer();
-      var timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      final completer = Completer();
+      final timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
         if (connectionState == ZIMConnectionState.disconnected) {
           if (timer.isActive) timer.cancel();
           if (!completer.isCompleted) completer.complete();
-          ZegoIMKitLogger.info('waitForDisconnect success');
+          ZIMKitLogger.info('waitForDisconnect success');
         }
       });
       Future.delayed(const Duration(seconds: 2), () {
         if (timer.isActive) timer.cancel();
         if (!completer.isCompleted) completer.complete();
-        ZegoIMKitLogger.info('waitForDisconnect timeout');
+        ZIMKitLogger.info('waitForDisconnect timeout');
       });
       await completer.future;
     }
   }
 
-  final Map<String, AsyncCache<ZIMUserFullInfo>> _queryUserCache = {};
-  Future<ZIMUserFullInfo> queryUser(String id) async {
-    if (_queryUserCache[id] == null) {
-      _queryUserCache[id] = AsyncCache(const Duration(minutes: 5));
+  // TODO 优化，如果短时间内来了大量请求，合并请求再调sdk
+  final Map<int, AsyncCache<ZIMUserFullInfo>> _queryUserCache = {};
+  Future<ZIMUserFullInfo> queryUser(String id,
+      {bool isQueryFromServer = true}) async {
+    final queryHash = Object.hash(id, isQueryFromServer);
+    if (_queryUserCache[queryHash] == null) {
+      _queryUserCache[queryHash] = AsyncCache(const Duration(minutes: 5));
     }
-    return await _queryUserCache[id]!.fetch(() async {
-      ZIMUserInfoQueryConfig config = ZIMUserInfoQueryConfig();
-      config.isQueryFromServer = true;
-
+    return _queryUserCache[queryHash]!.fetch(() async {
+      ZIMKitLogger.info(
+          'queryUser, id:$id, isQueryFromServer:$isQueryFromServer');
+      final config = ZIMUserInfoQueryConfig()
+        ..isQueryFromServer = isQueryFromServer;
       return ZIM.getInstance()!.queryUsersInfo([id], config).then(
           (ZIMUsersInfoQueriedResult result) {
         return result.userList.first;
       }).catchError((error) {
-        _queryUserCache[id]!.invalidate();
+        if (error is PlatformException && int.parse(error.code) == 6000012) {
+          if (isQueryFromServer) {
+            ZIMKitLogger.info('queryUser faild, retry queryUser from sdk');
+            return queryUser(id, isQueryFromServer: false);
+          } else {
+            ZIMKitLogger.info(
+                'queryUser from sdk faild, retry queryUser from server later');
+            // TODO test me
+            return Future.delayed(
+                const Duration(seconds: 1), () => ZIMKit().queryUser(id));
+          }
+        }
+
         return tryReloginOrNot(error).then((retryCode) {
           if (retryCode == 0) {
-            ZegoIMKitLogger.info('relogin success, retry queryUser');
+            ZIMKitLogger.info('relogin success, retry queryUser');
             return queryUser(id);
           } else {
-            ZegoIMKitLogger.severe('queryUser faild', error);
-            // throw error;
-            return Future.value(ZIMUserFullInfo());
+            _queryUserCache[queryHash]!.invalidate();
+            ZIMKitLogger.severe('queryUser faild', error);
+            throw error;
           }
         });
       });
     });
   }
 
-  Future<ListNotifier<ZegoIMKitConversation>>
-      getConversationListNotifier() async {
+  Future<ListNotifier<ZIMKitConversation>> getConversationListNotifier() async {
     if (db.conversations.inited) return db.conversations.data;
+    if (currentUser == null) {
+      loginCompleter ??= Completer();
+      await loginCompleter!.future;
+      loginCompleter = null;
+    }
 
-    db.conversations.loading = true;
-    var config = ZIMConversationQueryConfig();
-    config.count = kdefaultLoadCount;
-    return await ZIM
-        .getInstance()!
-        .queryConversationList(config)
-        .then((zimResult) {
-      ZegoIMKitLogger.info(
+    final config = ZIMConversationQueryConfig()..count = kdefaultLoadCount;
+    return ZIM.getInstance()!.queryConversationList(config).then((zimResult) {
+      ZIMKitLogger.info(
           'queryHistoryMessage: ${zimResult.conversationList.length}');
       db.conversations.init(zimResult.conversationList);
       if (zimResult.conversationList.isEmpty ||
@@ -197,10 +221,10 @@ class ZegoIMKitCoreData {
       return tryReloginOrNot(error).then((retryCode) {
         db.conversations.loading = false;
         if (retryCode == 0) {
-          ZegoIMKitLogger.info('relogin success, retry loadConversationList');
+          ZIMKitLogger.info('relogin success, retry loadConversationList');
           return getConversationListNotifier();
         } else {
-          ZegoIMKitLogger.severe('loadConversationList faild', error);
+          ZIMKitLogger.severe('loadConversationList faild', error);
           throw error;
         }
       });
@@ -211,17 +235,14 @@ class ZegoIMKitCoreData {
     if (db.conversations.noMore || db.conversations.loading) return 0;
     if (db.conversations.notInited) await getConversationListNotifier();
     if (db.conversations.isEmpty) return 0;
-    ZegoIMKitLogger.info('loadMoreConversation start');
+    ZIMKitLogger.info('loadMoreConversation start');
 
     db.conversations.loading = true;
     // start loading
-    var config = ZIMConversationQueryConfig();
-    config.count = kdefaultLoadCount;
-    config.nextConversation = db.conversations.data.value.last.zim;
-    return await ZIM
-        .getInstance()!
-        .queryConversationList(config)
-        .then((zimResult) {
+    final config = ZIMConversationQueryConfig()
+      ..count = kdefaultLoadCount
+      ..nextConversation = db.conversations.data.value.last.zim;
+    return ZIM.getInstance()!.queryConversationList(config).then((zimResult) {
       db.conversations.addAll(zimResult.conversationList);
       db.conversations.loading = false;
       if (zimResult.conversationList.isEmpty ||
@@ -234,10 +255,10 @@ class ZegoIMKitCoreData {
       return tryReloginOrNot(error).then((retryCode) {
         db.conversations.loading = false;
         if (retryCode == 0) {
-          ZegoIMKitLogger.info('relogin success, retry loadConversationList');
+          ZIMKitLogger.info('relogin success, retry loadConversationList');
           return loadMoreConversation();
         } else {
-          ZegoIMKitLogger.severe('loadConversationList faild', error);
+          ZIMKitLogger.severe('loadConversationList faild', error);
           throw error;
         }
       });
@@ -248,15 +269,14 @@ class ZegoIMKitCoreData {
       {bool isAlsoDeleteServerConversation = true}) async {
     db.conversations.delete(id, type);
 
-    ZIMConversationDeleteConfig deleteConfig = ZIMConversationDeleteConfig();
-    deleteConfig.isAlsoDeleteServerConversation =
-        isAlsoDeleteServerConversation;
+    final deleteConfig = ZIMConversationDeleteConfig()
+      ..isAlsoDeleteServerConversation = isAlsoDeleteServerConversation;
     await ZIM.getInstance()!.deleteConversation(id, type, deleteConfig);
   }
 
   void onConversationChanged(
       ZIM zim, List<ZIMConversationChangeInfo> conversationChangeInfoList) {
-    for (ZIMConversationChangeInfo changeInfo in conversationChangeInfoList) {
+    for (final changeInfo in conversationChangeInfoList) {
       switch (changeInfo.event) {
         case ZIMConversationEvent.added:
           db.conversations.insert(changeInfo.conversation!);
@@ -271,25 +291,29 @@ class ZegoIMKitCoreData {
     }
   }
 
-  Future<ListNotifier<ZegoIMKitMessage>> getMessageListNotifier(
+  Future<ListNotifier<ZIMKitMessage>> getMessageListNotifier(
       String conversationID, ZIMConversationType conversationType) async {
-    var dbMessages = db.messages(conversationID, conversationType);
+    final dbMessages = db.messages(conversationID, conversationType);
     if (dbMessages.inited) return dbMessages.data;
+    if (currentUser == null) {
+      loginCompleter ??= Completer();
+      await loginCompleter!.future;
+      loginCompleter = null;
+    }
 
     // start load
     dbMessages.loading = true;
-    var config = ZIMMessageQueryConfig();
-    config.reverse = true;
-    config.count = kdefaultLoadCount;
-    return await ZIM
+    final config = ZIMMessageQueryConfig()
+      ..reverse = true
+      ..count = kdefaultLoadCount;
+    return ZIM
         .getInstance()!
         .queryHistoryMessage(conversationID, conversationType, config)
         .then((ZIMMessageQueriedResult zimResult) {
-      ZegoIMKitLogger.info(
-          'queryHistoryMessage: ${zimResult.messageList.length}');
+      ZIMKitLogger.info('queryHistoryMessage: ${zimResult.messageList.length}');
       dbMessages.init(zimResult.messageList);
       // auto download media message
-      for (var kitMessage in dbMessages.data.value) {
+      for (final kitMessage in dbMessages.data.value) {
         if (kitMessage.zim is ZIMMediaMessage) downloadMediaFile(kitMessage);
       }
       if (zimResult.messageList.isEmpty ||
@@ -302,10 +326,10 @@ class ZegoIMKitCoreData {
       return tryReloginOrNot(error).then((retryCode) {
         dbMessages.loading = false;
         if (retryCode == 0) {
-          ZegoIMKitLogger.info('relogin success, retry loadMessageList');
+          ZIMKitLogger.info('relogin success, retry loadMessageList');
           return getMessageListNotifier(conversationID, conversationType);
         } else {
-          ZegoIMKitLogger.severe('loadMessageList faild', error);
+          ZIMKitLogger.severe('loadMessageList faild', error);
           throw error;
         }
       });
@@ -314,31 +338,30 @@ class ZegoIMKitCoreData {
 
   Future<int> loadMoreMessage(
       String conversationID, ZIMConversationType conversationType) async {
-    var dbMessages = db.messages(conversationID, conversationType);
+    final dbMessages = db.messages(conversationID, conversationType);
     if (dbMessages.notInited) {
       await getMessageListNotifier(conversationID, conversationType);
     }
     if (dbMessages.noMore || dbMessages.loading) return 0;
     dbMessages.loading = true;
-    ZegoIMKitLogger.info('loadMoreMessage start');
+    ZIMKitLogger.info('loadMoreMessage start');
 
-    var config = ZIMMessageQueryConfig();
-    config.count = kdefaultLoadCount;
-    config.reverse = true;
-    config.nextMessage = dbMessages.data.value.first.zim;
-    return await ZIM
+    final config = ZIMMessageQueryConfig()
+      ..count = kdefaultLoadCount
+      ..reverse = true
+      ..nextMessage = dbMessages.data.value.first.zim;
+    return ZIM
         .getInstance()!
         .queryHistoryMessage(conversationID, conversationType, config)
         .then((ZIMMessageQueriedResult zimResult) {
-      ZegoIMKitLogger.info(
-          'queryHistoryMessage: ${zimResult.messageList.length}');
+      ZIMKitLogger.info('queryHistoryMessage: ${zimResult.messageList.length}');
 
       dbMessages.insertAll(zimResult.messageList);
       // auto download media message
-      for (var kitMessage in dbMessages.data.value) {
+      for (final kitMessage in dbMessages.data.value) {
         if (kitMessage.zim is ZIMMediaMessage) downloadMediaFile(kitMessage);
       }
-      ZegoIMKitLogger.info(
+      ZIMKitLogger.info(
           'loadMoreMessage success, length ${zimResult.messageList.length}');
       if (zimResult.messageList.isEmpty ||
           zimResult.messageList.length < config.count) {
@@ -350,10 +373,10 @@ class ZegoIMKitCoreData {
       return tryReloginOrNot(error).then((retryCode) {
         dbMessages.loading = false;
         if (retryCode == 0) {
-          ZegoIMKitLogger.info('relogin success, retry loadMessageList');
+          ZIMKitLogger.info('relogin success, retry loadMessageList');
           return loadMoreMessage(conversationID, conversationType);
         } else {
-          ZegoIMKitLogger.severe('loadMessageList faild', error);
+          ZIMKitLogger.severe('loadMessageList faild', error);
           throw error;
         }
       });
@@ -374,7 +397,7 @@ class ZegoIMKitCoreData {
 
   void onReceiveMessage(String id, ZIMConversationType type,
       List<ZIMMessage> receiveMessages) async {
-    ZegoIMKitLogger.info(
+    ZIMKitLogger.info(
         'onReceiveMessage: $id, $type, ${receiveMessages.length}');
 
     if (db.conversations.notInited) {
@@ -382,53 +405,52 @@ class ZegoIMKitCoreData {
     }
 
     if (db.messages(id, type).notInited) {
-      ZegoIMKitLogger.info(
-          'onReceiveMessage: notInited, loadMessageList first');
+      ZIMKitLogger.info('onReceiveMessage: notInited, loadMessageList first');
       await getMessageListNotifier(id, type);
     } else {
       db.messages(id, type).receive(receiveMessages);
     }
 
     // auto download media message
-    for (var kitMessage in db.messages(id, type).data.value) {
+    for (final kitMessage in db.messages(id, type).data.value) {
       if (kitMessage.zim is ZIMMediaMessage) downloadMediaFile(kitMessage);
     }
   }
 
   void onError(ZIM zim, ZIMError errorInfo) {
-    ZegoIMKitLogger.severe(
-        "error, code:${errorInfo.code} ,message:${errorInfo.message}");
+    ZIMKitLogger.severe(
+        'error, code:${errorInfo.code} ,message:${errorInfo.message}');
   }
 
   void onTokenWillExpire(ZIM zim, int second) {
-    ZegoIMKitLogger.info("onTokenWillExpire, second:$second");
+    ZIMKitLogger.info('onTokenWillExpire, second:$second');
   }
 
   void onConversationTotalUnreadMessageCountUpdated(
       ZIM zim, int totalUnreadMessageCount) {
-    ZegoIMKitLogger.info(
-        "onConversationTotalUnreadMessageCountUpdated: $totalUnreadMessageCount");
+    ZIMKitLogger.info(
+        'onConversationTotalUnreadMessageCountUpdated: $totalUnreadMessageCount');
   }
 
   // need zim 2.5
   void onGroupStateChanged(ZIM zim, ZIMGroupState state, ZIMGroupEvent event,
       ZIMGroupOperatedInfo operatedInfo, ZIMGroupFullInfo groupInfo) {
-    ZegoIMKitLogger.info("onGroupStateChanged");
+    ZIMKitLogger.info('onGroupStateChanged');
   }
 
   void onGroupNameUpdated(ZIM zim, String groupName,
       ZIMGroupOperatedInfo operatedInfo, String groupID) {
-    ZegoIMKitLogger.info("onGroupNameUpdated");
+    ZIMKitLogger.info('onGroupNameUpdated');
   }
 
   void onGroupAvatarUrlUpdated(ZIM zim, String groupAvatarUrl,
       ZIMGroupOperatedInfo operatedInfo, String groupID) {
-    ZegoIMKitLogger.info("onGroupAvatarUrlUpdated");
+    ZIMKitLogger.info('onGroupAvatarUrlUpdated');
   }
 
   void onGroupNoticeUpdated(ZIM zim, String groupNotice,
       ZIMGroupOperatedInfo operatedInfo, String groupID) {
-    ZegoIMKitLogger.info("onGroupNoticeUpdated");
+    ZIMKitLogger.info('onGroupNoticeUpdated');
   }
 
   void onGroupAttributesUpdated(
@@ -436,7 +458,7 @@ class ZegoIMKitCoreData {
       List<ZIMGroupAttributesUpdateInfo> updateInfo,
       ZIMGroupOperatedInfo operatedInfo,
       String groupID) {
-    ZegoIMKitLogger.info("onGroupAttributesUpdated");
+    ZIMKitLogger.info('onGroupAttributesUpdated');
   }
 
   // need zim 2.5
@@ -447,12 +469,12 @@ class ZegoIMKitCoreData {
       List<ZIMGroupMemberInfo> userList,
       ZIMGroupOperatedInfo operatedInfo,
       String groupID) {
-    ZegoIMKitLogger.info("onGroupMemberStateChanged");
+    ZIMKitLogger.info('onGroupMemberStateChanged');
   }
 
   void onGroupMemberInfoUpdated(ZIM zim, List<ZIMGroupMemberInfo> userInfo,
       ZIMGroupOperatedInfo operatedInfo, String groupID) {
-    ZegoIMKitLogger.info("onGroupMemberInfoUpdated");
+    ZIMKitLogger.info('onGroupMemberInfoUpdated');
   }
 
   Future<void> sendMediaMessage(
@@ -460,39 +482,38 @@ class ZegoIMKitCoreData {
     ZIMConversationType conversationType,
     String mediaPath,
     ZIMMessageType messageType, {
-    FutureOr<ZegoIMKitMessage> Function(ZegoIMKitMessage message)?
-        preMessageSending,
-    Function(ZegoIMKitMessage message)? onMessageSent,
+    FutureOr<ZIMKitMessage> Function(ZIMKitMessage message)? preMessageSending,
+    Function(ZIMKitMessage message)? onMessageSent,
   }) async {
     if (mediaPath.isEmpty || !File(mediaPath).existsSync()) {
-      ZegoIMKitLogger.info(
+      ZIMKitLogger.info(
           "sendMediaMessage: mediaPath is empty or file doesn't exits");
       return;
     }
     // 1. create message
-    ZegoIMKitMessage kitMessage =
-        ZegoMessageUtils.mediaMessageFactory(mediaPath, messageType).tokit();
+    var kitMessage =
+        ZIMKitMessageUtils.mediaMessageFactory(mediaPath, messageType).tokit();
     kitMessage.zim.conversationID = conversationID;
     kitMessage.zim.conversationType = conversationType;
 
     // 2. preMessageSending
     kitMessage = (await preMessageSending?.call(kitMessage)) ?? kitMessage;
-    ZegoIMKitLogger.info('sendMediaMessage: $mediaPath');
+    ZIMKitLogger.info('sendMediaMessage: $mediaPath');
 
     // 3. call service
     await ZIM
         .getInstance()!
         .sendMediaMessage(
-          kitMessage.zim,
+          kitMessage.zim as ZIMMediaMessage,
           conversationID,
           conversationType,
           ZIMMessageSendConfig(),
           ZIMMediaMessageSendNotification(
             onMediaUploadingProgress:
-                ((message, currentFileSize, totalFileSize) {
+                (message, currentFileSize, totalFileSize) {
               final zimMessage = message as ZIMMediaMessage;
-              ZegoIMKitLogger.info(
-                  "onMediaUploadingProgress: ${zimMessage.fileName}, $currentFileSize/$totalFileSize");
+              ZIMKitLogger.info(
+                  'onMediaUploadingProgress: ${zimMessage.fileName}, $currentFileSize/$totalFileSize');
               kitMessage.updateExtraInfo({
                 'upload': {
                   ZIMMediaFileType.originalFile.name: {
@@ -501,30 +522,30 @@ class ZegoIMKitCoreData {
                   }
                 }
               });
-            }),
+            },
             onMessageAttached: (message) {
               final zimMessage = message as ZIMMediaMessage;
-              ZegoIMKitLogger.info(
-                  "sendMediaMessage.onMessageAttached: ${zimMessage.fileName}");
+              ZIMKitLogger.info(
+                  'sendMediaMessage.onMessageAttached: ${zimMessage.fileName}');
               kitMessage.data.value = zimMessage;
               db.messages(conversationID, conversationType).attach(kitMessage);
             },
           ),
         )
         .then((result) {
-      ZegoIMKitLogger.info("sendMediaMessage: success, $mediaPath}");
-      kitMessage.uploadDone(result.message);
+      ZIMKitLogger.info('sendMediaMessage: success, $mediaPath}');
+      kitMessage.data.value = result.message.clone();
     }).catchError((error) {
       kitMessage.sendFaild();
       return tryReloginOrNot(error).then((retryCode) {
         if (retryCode == 0) {
-          ZegoIMKitLogger.info('relogin success, retry sendMediaMessage');
+          ZIMKitLogger.info('relogin success, retry sendMediaMessage');
           sendMediaMessage(
               conversationID, conversationType, mediaPath, messageType,
               preMessageSending: preMessageSending,
               onMessageSent: onMessageSent);
         } else {
-          ZegoIMKitLogger.severe(
+          ZIMKitLogger.severe(
               'sendMediaMessage: faild, $mediaPath, error:$error');
           throw error;
         }
@@ -537,22 +558,22 @@ class ZegoIMKitCoreData {
 
   Future<void> sendTextMessage(
       String conversationID, ZIMConversationType conversationType, String text,
-      {FutureOr<ZegoIMKitMessage> Function(ZegoIMKitMessage message)?
+      {FutureOr<ZIMKitMessage> Function(ZIMKitMessage message)?
           preMessageSending,
-      Function(ZegoIMKitMessage message)? onMessageSent}) async {
+      Function(ZIMKitMessage message)? onMessageSent}) async {
     if (text.isEmpty) {
-      ZegoIMKitLogger.info('sendTextMessage: message is empty');
+      ZIMKitLogger.info('sendTextMessage: message is empty');
       return;
     }
     // 1. create message
-    ZegoIMKitMessage kitMessage = ZIMTextMessage(message: text).tokit();
-    ZIMMessageSendConfig sendConfig = ZIMMessageSendConfig();
-    ZIMPushConfig pushConfig = ZIMPushConfig();
+    var kitMessage = ZIMTextMessage(message: text).tokit();
+    final sendConfig = ZIMMessageSendConfig();
+    final pushConfig = ZIMPushConfig();
     sendConfig.pushConfig = pushConfig;
 
     // 2. preMessageSending
     kitMessage = (await preMessageSending?.call(kitMessage)) ?? kitMessage;
-    ZegoIMKitLogger.info('sendTextMessage: ${kitMessage.zim.message}');
+    ZIMKitLogger.info('sendTextMessage: $text');
 
     // 3. call service
     await ZIM.getInstance()!.sendMessage(
@@ -567,19 +588,18 @@ class ZegoIMKitCoreData {
         },
       ),
     ).then((result) {
-      final zimMessage = result.message as ZIMTextMessage;
-      ZegoIMKitLogger.info('sendTextMessage: success, ${zimMessage.message}');
-      kitMessage.data.value = zimMessage;
+      ZIMKitLogger.info('sendTextMessage: success, $text');
+      kitMessage.data.value = result.message.clone();
     }).catchError((error) {
       kitMessage.sendFaild();
       return tryReloginOrNot(error).then((retryCode) {
         if (retryCode == 0) {
-          ZegoIMKitLogger.info('relogin success, retry sendTextMessage');
+          ZIMKitLogger.info('relogin success, retry sendTextMessage');
           sendTextMessage(conversationID, conversationType, text,
               preMessageSending: preMessageSending,
               onMessageSent: onMessageSent);
         } else {
-          ZegoIMKitLogger.severe('sendTextMessage: faild, $text,error:$error');
+          ZIMKitLogger.severe('sendTextMessage: faild, $text,error:$error');
           throw error;
         }
       });
@@ -592,18 +612,16 @@ class ZegoIMKitCoreData {
     onReceiveMessage(id, type, [message]);
   }
 
-  void downloadMediaFile(ZegoIMKitMessage kitMessage) {
+  // TODO use flutter cache manager.
+  void downloadMediaFile(ZIMKitMessage kitMessage) {
     if (kitMessage.zim is! ZIMMediaMessage) {
-      ZegoIMKitLogger.severe(
-          "downloadMediaFile: ${kitMessage.zim.runtimeType} is not ZIMMediaMessage");
+      ZIMKitLogger.severe(
+          'downloadMediaFile: ${kitMessage.zim.runtimeType} is not ZIMMediaMessage');
       return;
     }
 
-    List<ZIMMediaFileType> downloadTypes = [];
+    final downloadTypes = <ZIMMediaFileType>[];
 
-    if ((kitMessage.zim as ZIMMediaMessage).fileLocalPath.isEmpty) {
-      downloadTypes.add(ZIMMediaFileType.originalFile);
-    }
     switch (kitMessage.zim.runtimeType) {
       case ZIMVideoMessage:
         if ((kitMessage.zim as ZIMVideoMessage)
@@ -611,33 +629,39 @@ class ZegoIMKitCoreData {
             .isEmpty) {
           downloadTypes.add(ZIMMediaFileType.videoFirstFrame);
         }
+        if ((kitMessage.zim as ZIMMediaMessage).fileLocalPath.isEmpty) {
+          downloadTypes.add(ZIMMediaFileType.originalFile);
+        }
         break;
       case ZIMImageMessage:
-        if ((kitMessage.zim as ZIMImageMessage).thumbnailLocalPath.isEmpty) {
-          downloadTypes.add(ZIMMediaFileType.thumbnail);
-        }
-        if ((kitMessage.zim as ZIMImageMessage).largeImageLocalPath.isEmpty) {
-          downloadTypes.add(ZIMMediaFileType.largeImage);
-        }
+        // just use flutter cache manager
         break;
       case ZIMAudioMessage:
+        if ((kitMessage.zim as ZIMMediaMessage).fileLocalPath.isEmpty) {
+          downloadTypes.add(ZIMMediaFileType.originalFile);
+        }
         break;
       case ZIMFileMessage:
+        if ((kitMessage.zim as ZIMMediaMessage).fileLocalPath.isEmpty) {
+          downloadTypes.add(ZIMMediaFileType.originalFile);
+        }
         break;
 
       default:
-        ZegoIMKitLogger.severe(
-            "not support download ${kitMessage.zim.runtimeType}");
+        ZIMKitLogger.severe(
+            'not support download ${kitMessage.zim.runtimeType}');
         return;
     }
 
-    for (var downloadType in downloadTypes) {
-      ZegoIMKitLogger.info(
-          "downloadMediaFile: ${(kitMessage.zim as ZIMMediaMessage).fileName} - ${downloadType.name} start");
-      ZIM.getInstance()!.downloadMediaFile(kitMessage.zim, downloadType,
-          (ZIMMessage zimMessage, int currentFileSize, int totalFileSize) {
-        ZegoIMKitLogger.info(
-            "downloadMediaFile: ${(kitMessage.zim as ZIMMediaMessage).fileName} - ${downloadType.name} $currentFileSize/$totalFileSize");
+    for (final downloadType in downloadTypes) {
+      ZIMKitLogger.info(
+          'downloadMediaFile: ${(kitMessage.zim as ZIMMediaMessage).fileName} - ${downloadType.name} start');
+      ZIM
+          .getInstance()!
+          .downloadMediaFile(kitMessage.zim as ZIMMediaMessage, downloadType,
+              (ZIMMessage zimMessage, int currentFileSize, int totalFileSize) {
+        ZIMKitLogger.info(
+            'downloadMediaFile: ${(kitMessage.zim as ZIMMediaMessage).fileName} - ${downloadType.name} $currentFileSize/$totalFileSize');
         kitMessage.updateExtraInfo({
           'download': {
             downloadType.name: {
@@ -647,8 +671,8 @@ class ZegoIMKitCoreData {
           }
         });
       }).then((ZIMMediaDownloadedResult result) {
-        ZegoIMKitLogger.info(
-            "downloadMediaFile: ${(kitMessage.zim as ZIMMediaMessage).fileName} - ${downloadType.name} success");
+        ZIMKitLogger.info(
+            'downloadMediaFile: ${(kitMessage.zim as ZIMMediaMessage).fileName} - ${downloadType.name} success');
         kitMessage.downloadDone(downloadType, result.message);
       });
     }
@@ -656,8 +680,8 @@ class ZegoIMKitCoreData {
 
   void onConnectionStateChanged(ZIM zim, ZIMConnectionState state,
       ZIMConnectionEvent event, Map extendedData) {
-    ZegoIMKitLogger.info(
-        "onConnectionStateChanged ${state.name}, ${event.name}, $extendedData");
+    ZIMKitLogger.info(
+        'onConnectionStateChanged ${state.name}, ${event.name}, $extendedData');
     connectionState = state;
     connectionStateCtrl
         .add({'state': state, 'event': event, 'extendedData': extendedData});
@@ -673,24 +697,26 @@ class ZegoIMKitCoreData {
             conversationID, conversationType);
       }
     } catch (e) {
-      ZegoIMKitLogger.severe("clearUnreadCount: $e");
+      ZIMKitLogger.severe('clearUnreadCount: $e');
     }
   }
 
-  Future<String?> createGroup(String name, List<String> inviteUserIDs) async {
+  Future<String?> createGroup(String name, List<String> inviteUserIDs,
+      {String id = ''}) async {
     String? ret;
-    ZIMGroupInfo groupInfo = ZIMGroupInfo();
-    groupInfo.groupName = name;
+    final groupInfo = ZIMGroupInfo()
+      ..groupName = name
+      ..groupID = id;
     await ZIM
         .getInstance()!
         .createGroup(groupInfo, inviteUserIDs)
         .then((ZIMGroupCreatedResult zimResult) {
-      ZegoIMKitLogger.info(
-          "createGroup: success, groupID: ${zimResult.groupInfo.baseInfo.groupID}");
+      ZIMKitLogger.info(
+          'createGroup: success, groupID: ${zimResult.groupInfo.baseInfo.groupID}');
       db.conversations.insert(zimResult.groupInfo.toConversation());
       ret = zimResult.groupInfo.baseInfo.groupID;
     }).catchError((error) {
-      ZegoIMKitLogger.severe("createGroup: faild, name: $name, error: $error");
+      ZIMKitLogger.severe('createGroup: faild, name: $name, error: $error');
     });
     return ret;
   }
@@ -702,14 +728,43 @@ class ZegoIMKitCoreData {
         .getInstance()!
         .joinGroup(conversationID)
         .then((ZIMGroupJoinedResult zimResult) {
-      ZegoIMKitLogger.info(
-          "joinGroup: success, groupID: ${zimResult.groupInfo.baseInfo.groupID}");
+      ZIMKitLogger.info(
+          'joinGroup: success, groupID: ${zimResult.groupInfo.baseInfo.groupID}');
       db.conversations.insert(zimResult.groupInfo.toConversation());
       errorCode = 0;
     }).catchError((error) {
-      errorCode = error.code;
-      ZegoIMKitLogger.severe(
-          "joinGroup: faild, groupID: $conversationID, error: $error");
+      errorCode = int.parse(error.code);
+      if (errorCode == ZIMErrorCode.groupModuleMemberIsAlreadyInTheGroup) {
+        ZIM
+            .getInstance()!
+            .queryGroupList()
+            .then((ZIMGroupListQueriedResult zimResult) {
+          var gotIt = false;
+          // TODO db.groupList
+          for (final group in zimResult.groupList) {
+            if (group.baseInfo!.id == conversationID) {
+              db.conversations.insert(group.toConversation());
+              gotIt = true;
+              break;
+            }
+          }
+          if (!gotIt) {
+            ZIMKitLogger.info(
+                'joinGroup: warning, already in, but query faild: $conversationID, insert a dummy conversation');
+            db.conversations.insert(
+              ZIMConversation()
+                ..id = conversationID
+                ..type = ZIMConversationType.group,
+            );
+          }
+        }).catchError((error) {
+          ZIMKitLogger.severe(
+              'joinGroup: faild, already in, but query faild: $conversationID, error: $error');
+        });
+      } else {
+        ZIMKitLogger.severe(
+            'joinGroup: faild, groupID: $conversationID, error: $error');
+      }
     });
     return errorCode;
   }
@@ -721,13 +776,13 @@ class ZegoIMKitCoreData {
         .getInstance()!
         .inviteUsersIntoGroup(inviteUserIDs, conversationID)
         .then((ZIMGroupUsersInvitedResult zimResult) {
-      ZegoIMKitLogger.info(
-          "inviteUsersToJoinGroup: success, groupID: $conversationID");
+      ZIMKitLogger.info(
+          'inviteUsersToJoinGroup: success, groupID: $conversationID');
       errorCode = 0;
     }).catchError((error) {
-      errorCode = error.code;
-      ZegoIMKitLogger.severe(
-          "inviteUsersToJoinGroup: faild, groupID: $conversationID, error: $error");
+      errorCode = int.parse(error.code);
+      ZIMKitLogger.severe(
+          'inviteUsersToJoinGroup: faild, groupID: $conversationID, error: $error');
     });
     return errorCode;
   }
@@ -738,13 +793,16 @@ class ZegoIMKitCoreData {
         .getInstance()!
         .leaveGroup(conversationID)
         .then((ZIMGroupLeftResult zimResult) {
-      ZegoIMKitLogger.info("leaveGroup: success, groupID: $conversationID");
+      ZIMKitLogger.info('leaveGroup: success, groupID: $conversationID');
       db.conversations.remove(conversationID, ZIMConversationType.group);
       errorCode = 0;
     }).catchError((error) {
-      errorCode = error.code;
-      ZegoIMKitLogger.severe(
-          "leaveGroup: faild, groupID: $conversationID, error: $error");
+      errorCode = int.parse(error.code);
+      if (errorCode == ZIMErrorCode.groupModuleUserIsNotInTheGroup) {
+        db.conversations.remove(conversationID, ZIMConversationType.group);
+      }
+      ZIMKitLogger.severe(
+          'leaveGroup: faild, groupID: $conversationID, error: $error');
     });
     return errorCode;
   }

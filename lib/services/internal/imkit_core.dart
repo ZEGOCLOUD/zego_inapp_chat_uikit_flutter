@@ -2,37 +2,45 @@ import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
+
 import 'package:logging/logging.dart';
 
-import 'imkit_core_data.dart';
-import 'imkit_core_event.dart';
+import 'package:zego_zimkit/services/internal/imkit_core_data.dart';
+import 'package:zego_zimkit/services/internal/imkit_core_event.dart';
 
 part 'imkit_logger.dart';
 
-class ZegoIMKitCore with ZegoIMKitCoreEvent {
-  ZegoIMKitCoreData coreData = ZegoIMKitCoreData();
+// TODO core和coreData再整理一下
+class ZIMKitCore with ZIMKitCoreEvent {
+  factory ZIMKitCore() => instance;
+  ZIMKitCore._internal();
+  ZIMKitCoreData coreData = ZIMKitCoreData();
 
-  Future<void> init(
-      {required int appID, String appSign = '', Level logLevel = Level.ALL, bool enablePrint = true}) async {
-    ZegoIMKitLogger.init(logLevel: logLevel, enablePrint: enablePrint);
+  Future<void> init({
+    required int appID,
+    String appSign = '',
+    String appSecret = '',
+    Level logLevel = Level.ALL,
+    bool enablePrint = true,
+  }) async {
+    ZIMKitLogger.init(logLevel: logLevel, enablePrint: enablePrint);
     initEventHandler();
-    coreData.init(appID: appID, appSign: appSign);
+    coreData.init(appID: appID, appSign: appSign, appSecret: appSecret);
   }
 
   Future<void> uninit() async {
     uninitEventHandler();
-    return await coreData.uninit();
+    return coreData.uninit();
   }
 
-  Future<int> login({required String id, String name = ''}) async {
-    return coreData.login(id: id, name: name);
+  Future<int> connectUser(
+      {required String id, String name = '', String token = ''}) async {
+    return coreData.connectUser(id: id, name: name, token: token);
   }
 
-  Future<void> logout() async {
-    await coreData.logout();
+  Future<void> disconnectUser() async {
+    await coreData.disconnectUser();
   }
 
-  static ZegoIMKitCore instance = ZegoIMKitCore._internal();
-  factory ZegoIMKitCore() => instance;
-  ZegoIMKitCore._internal();
+  static ZIMKitCore instance = ZIMKitCore._internal();
 }

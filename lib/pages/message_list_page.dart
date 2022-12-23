@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'package:zego_imkit/zego_imkit.dart';
+import 'package:zego_zimkit/zego_zimkit.dart';
 
-class ZegoMessageListPage extends StatelessWidget {
-  const ZegoMessageListPage({
+class ZIMKitMessageListPage extends StatelessWidget {
+  const ZIMKitMessageListPage({
     Key? key,
     required this.conversationID,
     this.conversationType = ZIMConversationType.peer,
@@ -51,47 +51,50 @@ class ZegoMessageListPage extends StatelessWidget {
   /// use [messageInputActions] like this to add your custom actions:
   ///
   /// actions: [
-  ///   ZegoMessageInputAction.left(
+  ///   ZIMKitMessageInputAction.left(
   ///     IconButton(icon: Icon(Icons.mic), onPressed: () {})
   ///   ),
-  ///   ZegoMessageInputAction.leftInside(
+  ///   ZIMKitMessageInputAction.leftInside(
   ///     IconButton(icon: Icon(Icons.sentiment_satisfied_alt_outlined), onPressed: () {})
   ///   ),
-  ///   ZegoMessageInputAction.rightInside(
+  ///   ZIMKitMessageInputAction.rightInside(
   ///     IconButton(icon: Icon(Icons.cabin), onPressed: () {})
   ///   ),
-  ///   ZegoMessageInputAction.right(
+  ///   ZIMKitMessageInputAction.right(
   ///     IconButton(icon: Icon(Icons.sd), onPressed: () {})
   ///   ),
   /// ],
-  final List<ZegoMessageInputAction>? messageInputActions;
+  final List<ZIMKitMessageInputAction>? messageInputActions;
 
   /// Called when a message is sent.
-  final void Function(ZegoIMKitMessage)? onMessageSent;
+  final void Function(ZIMKitMessage)? onMessageSent;
 
   /// Called before a message is sent.
-  final FutureOr<ZegoIMKitMessage> Function(ZegoIMKitMessage)?
-      preMessageSending;
+  final FutureOr<ZIMKitMessage> Function(ZIMKitMessage)? preMessageSending;
 
-  /// By default, [ZegoMessageInput] will show a button to pick file.
+  /// By default, [ZIMKitMessageInput] will show a button to pick file.
   /// If you don't want to show this button, set [showPickFileButton] to false.
   final bool showPickFileButton;
 
   /// The TextField's decoration.
   final InputDecoration? inputDecoration;
 
-  /// The [TextEditingController] to use. if not provided, a default one will be created.
+  /// The [TextEditingController] to use.
+  /// if not provided, a default one will be created.
   final TextEditingController? editingController;
 
-  /// The [ScrollController] to use. if not provided, a default one will be created.
+  /// The [ScrollController] to use.
+  /// if not provided, a default one will be created.
   final ScrollController? messageListScrollController;
 
-  final void Function(BuildContext context, ZegoIMKitMessage message,
-      Function defaultAction)? onMessageItemPressd;
-  final void Function(BuildContext context, ZegoIMKitMessage message,
-      Function defaultAction)? onMessageItemLongPress;
+  final void Function(
+          BuildContext context, ZIMKitMessage message, Function defaultAction)?
+      onMessageItemPressd;
+  final void Function(
+          BuildContext context, ZIMKitMessage message, Function defaultAction)?
+      onMessageItemLongPress;
   final Widget Function(
-          BuildContext context, ZegoIMKitMessage message, Widget defaultWidget)?
+          BuildContext context, ZIMKitMessage message, Widget defaultWidget)?
       messageItemBuilder;
   final Widget Function(BuildContext context, Widget defaultWidget)?
       messageListErrorBuilder;
@@ -111,7 +114,11 @@ class ZegoMessageListPage extends StatelessWidget {
             : buildAppBar(context),
         body: Column(
           children: [
-            ZegoMessageListView(
+            ZIMKitMessageListView(
+              key: ValueKey('ZIMKitMessageListView:${Object.hash(
+                conversationID,
+                conversationType,
+              )}'),
               conversationID: conversationID,
               conversationType: conversationType,
               onPressed: onMessageItemPressd,
@@ -122,7 +129,11 @@ class ZegoMessageListPage extends StatelessWidget {
               scrollController: messageListScrollController,
               theme: theme,
             ),
-            ZegoMessageInput(
+            ZIMKitMessageInput(
+              key: ValueKey('ZIMKitMessageInput:${Object.hash(
+                conversationID,
+                conversationType,
+              )}'),
               conversationID: conversationID,
               conversationType: conversationType,
               actions: messageInputActions,
@@ -143,7 +154,7 @@ class ZegoMessageListPage extends StatelessWidget {
     return AppBar(
       title: ValueListenableBuilder(
         valueListenable:
-            ZegoIMKit().getConversation(conversationID, conversationType).data,
+            ZIMKit().getConversation(conversationID, conversationType).data,
         builder: (context, ZIMConversation conversation, child) {
           return Row(
             children: [

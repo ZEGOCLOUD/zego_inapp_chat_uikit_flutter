@@ -1,19 +1,26 @@
 part of 'services.dart';
 
-mixin ZegoMessageService {
-  Future<ValueNotifier<List<ZegoIMKitMessage>>> getMessageListNotifier(
+mixin ZIMKitMessageService {
+  Future<ValueNotifier<List<ZIMKitMessage>>> getMessageListNotifier(
       String conversationID, ZIMConversationType conversationType) {
-    return ZegoIMKitCore.instance.coreData.getMessageListNotifier(conversationID, conversationType);
+    return ZIMKitCore.instance.coreData
+        .getMessageListNotifier(conversationID, conversationType);
+  }
+
+  Future<int> loadMoreMessage(
+      String conversationID, ZIMConversationType conversationType) async {
+    return ZIMKitCore.instance.coreData
+        .loadMoreMessage(conversationID, conversationType);
   }
 
   Future<void> sendTextMessage(
     String conversationID,
     ZIMConversationType conversationType,
     String text, {
-    FutureOr<ZegoIMKitMessage> Function(ZegoIMKitMessage)? preMessageSending,
-    Function(ZegoIMKitMessage)? onMessageSent,
+    FutureOr<ZIMKitMessage> Function(ZIMKitMessage)? preMessageSending,
+    Function(ZIMKitMessage)? onMessageSent,
   }) async {
-    return ZegoIMKitCore.instance.coreData.sendTextMessage(
+    return ZIMKitCore.instance.coreData.sendTextMessage(
       conversationID,
       conversationType,
       text,
@@ -28,12 +35,12 @@ mixin ZegoMessageService {
     PlatformFile file, {
     bool audoDetectType = true,
     ZIMMediaUploadingProgress? mediaUploadingProgress,
-    FutureOr<ZegoIMKitMessage> Function(ZegoIMKitMessage)? preMessageSending,
-    Function(ZegoIMKitMessage)? onMessageSent,
+    FutureOr<ZIMKitMessage> Function(ZIMKitMessage)? preMessageSending,
+    Function(ZIMKitMessage)? onMessageSent,
   }) async {
     if (kIsWeb) {
     } else {
-      return await ZegoIMKitCore.instance.coreData.sendMediaMessage(
+      return ZIMKitCore.instance.coreData.sendMediaMessage(
         conversationID,
         conversationType,
         file.path!,
@@ -50,17 +57,19 @@ mixin ZegoMessageService {
     List<PlatformFile> files, {
     bool audoDetectType = true,
     ZIMMediaUploadingProgress? mediaUploadingProgress,
-    FutureOr<ZegoIMKitMessage> Function(ZegoIMKitMessage)? preMessageSending,
-    Function(ZegoIMKitMessage)? onMessageSent,
+    FutureOr<ZIMKitMessage> Function(ZIMKitMessage)? preMessageSending,
+    Function(ZIMKitMessage)? onMessageSent,
   }) async {
     if (kIsWeb) {
     } else {
-      for (var file in files) {
-        await ZegoIMKitCore.instance.coreData.sendMediaMessage(
+      for (final file in files) {
+        await ZIMKitCore.instance.coreData.sendMediaMessage(
           conversationID,
           conversationType,
           file.path!,
-          audoDetectType ? ZegoIMKit().getMessageTypeByFileExtension(file) : ZIMMessageType.file,
+          audoDetectType
+              ? ZIMKit().getMessageTypeByFileExtension(file)
+              : ZIMMessageType.file,
           preMessageSending: preMessageSending,
           onMessageSent: onMessageSent,
         );
@@ -69,7 +78,7 @@ mixin ZegoMessageService {
     }
   }
 
-  void downloadMediaFile(ZegoIMKitMessage message) {
-    return ZegoIMKitCore.instance.coreData.downloadMediaFile(message);
+  void downloadMediaFile(ZIMKitMessage message) {
+    return ZIMKitCore.instance.coreData.downloadMediaFile(message);
   }
 }

@@ -1,31 +1,33 @@
 import 'package:flutter/material.dart';
 
-import 'package:zego_imkit/services/services.dart';
+import 'package:zego_zimkit/services/services.dart';
 
-class ZegoFileMessage extends StatelessWidget {
-  const ZegoFileMessage({
+class ZIMKitFileMessage extends StatelessWidget {
+  const ZIMKitFileMessage({
     Key? key,
     required this.message,
     this.onPressed,
     this.onLongPress,
   }) : super(key: key);
 
-  final ZegoIMKitMessage message;
-  final void Function(BuildContext context, ZegoIMKitMessage message,
-      Function defaultAction)? onPressed;
-  final void Function(BuildContext context, ZegoIMKitMessage message,
-      Function defaultAction)? onLongPress;
+  final ZIMKitMessage message;
+  final void Function(
+          BuildContext context, ZIMKitMessage message, Function defaultAction)?
+      onPressed;
+  final void Function(
+          BuildContext context, ZIMKitMessage message, Function defaultAction)?
+      onLongPress;
 
   @override
   Widget build(BuildContext context) {
-    var color = message.isSender
+    final color = message.isSender
         ? Colors.white
         : Theme.of(context).textTheme.bodyText1!.color;
-    var textStyle = TextStyle(color: color);
+    final textStyle = TextStyle(color: color);
     return ValueListenableBuilder<ZIMMessage>(
       valueListenable: message.data,
       builder: (context, ZIMMessage msg, child) {
-        ZIMFileMessage message = msg as ZIMFileMessage;
+        final message = msg as ZIMFileMessage;
         return Flexible(
           child: GestureDetector(
             // TODO download file
@@ -53,8 +55,11 @@ class ZegoFileMessage extends StatelessWidget {
                             style: textStyle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis),
-                        Text('${(message.fileSize / 1024).ceil()} kb',
-                            style: textStyle, maxLines: 1),
+                        Text(
+                          fileSizeFormat(message.fileSize),
+                          style: textStyle,
+                          maxLines: 1,
+                        ),
                       ],
                     ),
                   ),
@@ -66,5 +71,17 @@ class ZegoFileMessage extends StatelessWidget {
         );
       },
     );
+  }
+
+  String fileSizeFormat(int size) {
+    if (size < 1024) {
+      return '$size B';
+    } else if (size < 1024 * 1024) {
+      return '${(size / 1024).ceil()} KB';
+    } else if (size < 1024 * 1024 * 1024) {
+      return '${(size / 1024 / 1024).ceil()} MB';
+    } else {
+      return '${(size / 1024 / 1024 / 1024).ceil()} GB';
+    }
   }
 }
