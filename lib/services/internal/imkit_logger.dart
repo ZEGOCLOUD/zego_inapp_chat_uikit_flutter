@@ -1,19 +1,20 @@
 part of 'imkit_core.dart';
 
 /*
-  - usage:
+  usage:
   ZIMKitLogger.init()
   ZIMKitLogger.onRecord.listen((record) {
     print('${record.level.name}: ${record.time}: ${record.message}');
   });
 
 
+  ZIMKitLogger.finest('finest');
+  ZIMKitLogger.finer('finer');
+  ZIMKitLogger.fine('fine');
   ZIMKitLogger.info('info');
-  ZIMKitLogger.debug('debug');
-  ZIMKitLogger.warn('warn');
-  ZIMKitLogger.info('info');
-  ZIMKitLogger.error('error');
-  ZIMKitLogger.fatal('fatal');
+  ZIMKitLogger.warning('warning');
+  ZIMKitLogger.severe('severe');
+  ZIMKitLogger.shout('shout');
 */
 
 class ZIMKitLogger {

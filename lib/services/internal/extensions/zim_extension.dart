@@ -1,124 +1,120 @@
-import 'package:flutter/material.dart';
-
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
 
 import 'package:zego_zimkit/zego_zimkit.dart';
 
 extension ZIMMessageExtend on ZIMMessage {
-  bool get isSender => direction == ZIMMessageDirection.send;
+  ZIMKitMessage tokit() {
+    final ret = ZIMKitMessage()
+      ..zim = this
+      ..type = type
+      ..info = (ZIMKitMessageBaseInfo()
+        ..messageID = messageID
+        ..localMessageID = localMessageID
+        ..senderUserID = senderUserID
+        ..conversationID = conversationID
+        ..direction = direction
+        ..sentStatus = sentStatus
+        ..conversationType = conversationType
+        ..timestamp = timestamp
+        ..conversationSeq = conversationSeq
+        ..orderKey = orderKey
+        ..isUserInserted = isUserInserted
+        ..receiptStatus = receiptStatus);
+
+    switch (type) {
+      case ZIMMessageType.text:
+        final zimMessage = this as ZIMTextMessage;
+        ret.textContent = ZIMKitMessageTextContent()..text = zimMessage.message;
+        break;
+      case ZIMMessageType.image:
+        final zimMessage = this as ZIMImageMessage;
+        ret.imageContent = (ZIMKitMessageImageContent()
+          ..fileLocalPath = zimMessage.fileLocalPath
+          ..fileDownloadUrl = zimMessage.fileDownloadUrl
+          ..fileUID = zimMessage.fileUID
+          ..fileName = zimMessage.fileName
+          ..fileSize = zimMessage.fileSize
+          ..thumbnailDownloadUrl = zimMessage.thumbnailDownloadUrl
+          ..thumbnailLocalPath = zimMessage.thumbnailLocalPath
+          ..largeImageDownloadUrl = zimMessage.largeImageDownloadUrl
+          ..largeImageLocalPath = zimMessage.largeImageLocalPath
+          ..originalImageWidth = zimMessage.originalImageWidth
+          ..originalImageHeight = zimMessage.originalImageHeight
+          ..largeImageWidth = zimMessage.largeImageWidth
+          ..largeImageHeight = zimMessage.largeImageHeight
+          ..thumbnailWidth = zimMessage.thumbnailWidth
+          ..thumbnailHeight = zimMessage.thumbnailHeight);
+        break;
+      case ZIMMessageType.file:
+        final zimMessage = this as ZIMFileMessage;
+        ret.fileContent = (ZIMKitMessageFileContent()
+          ..fileLocalPath = zimMessage.fileLocalPath
+          ..fileDownloadUrl = zimMessage.fileDownloadUrl
+          ..fileUID = zimMessage.fileUID
+          ..fileName = zimMessage.fileName
+          ..fileSize = zimMessage.fileSize);
+        break;
+      case ZIMMessageType.audio:
+        final zimMessage = this as ZIMAudioMessage;
+        ret.audioContent = (ZIMKitMessageAudioContent()
+          ..fileLocalPath = zimMessage.fileLocalPath
+          ..fileDownloadUrl = zimMessage.fileDownloadUrl
+          ..fileUID = zimMessage.fileUID
+          ..fileName = zimMessage.fileName
+          ..fileSize = zimMessage.fileSize
+          ..audioDuration = zimMessage.audioDuration);
+        break;
+      case ZIMMessageType.video:
+        final zimMessage = this as ZIMVideoMessage;
+        ret.videoContent = (ZIMKitMessageVideoContent()
+          ..fileLocalPath = zimMessage.fileLocalPath
+          ..fileDownloadUrl = zimMessage.fileDownloadUrl
+          ..fileUID = zimMessage.fileUID
+          ..fileName = zimMessage.fileName
+          ..fileSize = zimMessage.fileSize
+          ..videoDuration = zimMessage.videoDuration
+          ..videoFirstFrameDownloadUrl = zimMessage.videoFirstFrameDownloadUrl
+          ..videoFirstFrameLocalPath = zimMessage.videoFirstFrameLocalPath
+          ..videoFirstFrameWidth = zimMessage.videoFirstFrameWidth
+          ..videoFirstFrameHeight = zimMessage.videoFirstFrameHeight);
+        break;
+      case ZIMMessageType.system:
+        final zimMessage = this as ZIMSystemMessage;
+        ret.systemContent =
+            (ZIMKitMessageSystemContent()..info = zimMessage.message);
+        break;
+      default:
+        break;
+    }
+
+    return ret;
+  }
+}
+
+extension ZIMKitMessageExtend on ZIMKitMessage {
+  bool get isMine => info.direction == ZIMMessageDirection.send;
 
   String tostr() {
     switch (type) {
-      case ZIMMessageType.text:
-        return (this as ZIMTextMessage).message;
-      case ZIMMessageType.command:
-        return '[cmd]';
-      case ZIMMessageType.barrage:
-        return (this as ZIMBarrageMessage).message;
-      case ZIMMessageType.audio:
-        return '[audio]';
-      case ZIMMessageType.video:
-        return '[video]';
-      case ZIMMessageType.file:
-        return '[file]';
-      case ZIMMessageType.image:
-        return '[image]';
-      case ZIMMessageType.unknown:
-        return '[unknown message type]';
-      case ZIMMessageType.system:
-        return '[system]';
+      case ZIMKitMessageType.text:
+        return textContent!.text;
       default:
-        return '[unknown message type]';
+        return '[${type.name}]';
     }
   }
 
-  ZIMKitMessage tokit() => ZIMKitMessage(ValueNotifier(this));
-
-  ZIMMessage _cloneMediaDetail(ZIMMediaMessage newMessage) {
-    final rv = this as ZIMMediaMessage;
-    newMessage
-      ..fileLocalPath = rv.fileLocalPath
-      ..fileDownloadUrl = rv.fileDownloadUrl
-      ..fileUID = rv.fileUID
-      ..fileName = rv.fileName
-      ..fileSize = rv.fileSize;
-    return newMessage;
-  }
-
-  ZIMMessage _cloneDetail() {
-    if (runtimeType == ZIMTextMessage) {
-      return ZIMTextMessage(message: (this as ZIMTextMessage).message);
-    } else if (runtimeType == ZIMCommandMessage) {
-      return ZIMCommandMessage(message: (this as ZIMCommandMessage).message);
-    } else if (runtimeType == ZIMBarrageMessage) {
-      return ZIMBarrageMessage(message: (this as ZIMBarrageMessage).message);
-    } else if (runtimeType == ZIMRevokeMessage) {
-      final rv = this as ZIMRevokeMessage;
-      return ZIMRevokeMessage()
-        ..revokeType = rv.revokeType
-        ..revokeStatus = rv.revokeStatus
-        ..revokeTimestamp = rv.revokeTimestamp
-        ..operatedUserID = rv.operatedUserID
-        ..revokeExtendedData = rv.revokeExtendedData
-        ..originalMessageType = rv.originalMessageType
-        ..originalTextMessageContent = rv.originalTextMessageContent;
-    } else if (runtimeType == ZIMSystemMessage) {
-      return ZIMSystemMessage(message: (this as ZIMSystemMessage).message);
-    } else if (runtimeType == ZIMImageMessage) {
-      final rv = this as ZIMImageMessage;
-      return _cloneMediaDetail(
-        ZIMImageMessage(rv.fileLocalPath)
-          ..thumbnailDownloadUrl = rv.thumbnailDownloadUrl
-          ..thumbnailLocalPath = rv.thumbnailLocalPath
-          ..largeImageDownloadUrl = rv.largeImageDownloadUrl
-          ..largeImageLocalPath = rv.largeImageLocalPath
-          ..originalImageWidth = rv.originalImageWidth
-          ..originalImageHeight = rv.originalImageHeight
-          ..largeImageWidth = rv.largeImageWidth
-          ..largeImageHeight = rv.largeImageHeight
-          ..thumbnailWidth = rv.thumbnailWidth
-          ..thumbnailHeight = rv.thumbnailHeight,
-      );
-    } else if (runtimeType == ZIMVideoMessage) {
-      final rv = this as ZIMVideoMessage;
-      return _cloneMediaDetail(
-        ZIMVideoMessage(rv.fileLocalPath)
-          ..videoDuration = rv.videoDuration
-          ..videoFirstFrameDownloadUrl = rv.videoFirstFrameDownloadUrl
-          ..videoFirstFrameLocalPath = rv.videoFirstFrameLocalPath
-          ..videoFirstFrameWidth = rv.videoFirstFrameWidth
-          ..videoFirstFrameHeight = rv.videoFirstFrameHeight,
-      );
-    } else if (runtimeType == ZIMAudioMessage) {
-      final rv = this as ZIMAudioMessage;
-      return _cloneMediaDetail(
-        ZIMAudioMessage(rv.fileLocalPath)..audioDuration = rv.audioDuration,
-      );
-    } else if (runtimeType == ZIMFileMessage) {
-      final rv = this as ZIMFileMessage;
-      return _cloneMediaDetail(
-        ZIMFileMessage(rv.fileLocalPath),
-      );
-    } else {
-      throw UnimplementedError();
-    }
-  }
-
-  ZIMMessage clone() {
-    return _cloneDetail()
+  ZIMKitMessage clone() {
+    return ZIMKitMessage()
       ..type = type
-      ..messageID = messageID
-      ..localMessageID = localMessageID
-      ..senderUserID = senderUserID
-      ..conversationID = conversationID
-      ..direction = direction
-      ..sentStatus = sentStatus
-      ..conversationType = conversationType
-      ..timestamp = timestamp
-      ..conversationSeq = conversationSeq
-      ..orderKey = orderKey
-      ..isUserInserted = isUserInserted
-      ..receiptStatus = receiptStatus;
+      ..info = info
+      ..imageContent = imageContent
+      ..videoContent = videoContent
+      ..audioContent = audioContent
+      ..fileContent = fileContent
+      ..textContent = textContent
+      ..systemContent = systemContent
+      ..zim = zim;
   }
 }
 
@@ -157,16 +153,42 @@ extension ZIMString on String {
 }
 
 extension ZIMConversationExtend on ZIMConversation {
+  ZIMKitConversation tokit() {
+    return ZIMKitConversation()
+      ..type = type
+      ..id = id
+      ..name = name.isEmpty ? 'Chat' : name
+      ..avatarUrl = conversationAvatarUrl
+      ..notificationStatus = notificationStatus
+      ..unreadMessageCount = unreadMessageCount
+      ..orderKey = orderKey
+      ..disable = false
+      ..lastMessage = lastMessage?.tokit();
+  }
+
   String get id => conversationID;
   set id(String value) => conversationID = value;
-
-  String get name => conversationName.isEmpty ? 'Chat' : conversationName;
+  String get name => conversationName;
   set name(String value) => conversationName = value;
+  String get avatarUrl => conversationAvatarUrl;
+  set avatarUrl(String value) => conversationAvatarUrl = value;
+}
 
-  String get url => conversationAvatarUrl;
-  set url(String value) => conversationAvatarUrl = value;
+extension ZIMKitConversationExtend on ZIMKitConversation {
+  ZIMConversation tozim() {
+    return ZIMConversation()
+      ..type = type
+      ..id = id
+      ..name = name
+      ..avatarUrl = avatarUrl
+      ..notificationStatus = notificationStatus
+      ..unreadMessageCount = unreadMessageCount
+      ..orderKey = orderKey
+      ..lastMessage = lastMessage?.zim;
+  }
 
-  bool equal(ZIMConversation other) => id == other.id && type == other.type;
+  bool equal(String id, ZIMConversationType type) =>
+      (this.id == id) && (this.type == type);
 
   Widget get icon {
     late Widget placeholder;
@@ -181,33 +203,32 @@ extension ZIMConversationExtend on ZIMConversation {
         break;
     }
 
-    return conversationAvatarUrl.isEmpty
+    return avatarUrl.isEmpty
         ? placeholder
         : CachedNetworkImage(
-            imageUrl: conversationAvatarUrl,
+            imageUrl: avatarUrl,
             fit: BoxFit.cover,
             errorWidget: (context, _, __) => placeholder,
             placeholder: (context, url) => placeholder,
           );
   }
 
-  ZIMConversation clone() {
-    return ZIMConversation()
-      ..conversationID = conversationID
-      ..conversationName = conversationName
-      ..conversationAvatarUrl = conversationAvatarUrl
+  ZIMKitConversation clone() {
+    return ZIMKitConversation()
       ..type = type
+      ..id = id
+      ..name = name
+      ..avatarUrl = avatarUrl
       ..notificationStatus = notificationStatus
       ..unreadMessageCount = unreadMessageCount
-      ..lastMessage = lastMessage
-      ..orderKey = orderKey;
+      ..orderKey = orderKey
+      ..disable = disable
+      ..lastMessage = lastMessage;
   }
-
-  ZIMKitConversation tokit() => ZIMKitConversation(ValueNotifier(this));
 }
 
 extension ZIMGroupFullInfoExtension on ZIMGroupFullInfo {
-  ZIMConversation toConversation() {
+  ZIMKitConversation toConversation() {
     return baseInfo.toConversation();
   }
 
@@ -219,11 +240,11 @@ extension ZIMGroupFullInfoExtension on ZIMGroupFullInfo {
 }
 
 extension ZIMGroupExtension on ZIMGroup {
-  ZIMConversation toConversation() {
-    return ZIMConversation()
+  ZIMKitConversation toConversation() {
+    return ZIMKitConversation()
       ..id = baseInfo?.groupID ?? ''
       ..name = baseInfo?.groupName ?? ''
-      ..url = baseInfo?.groupAvatarUrl ?? ''
+      ..avatarUrl = baseInfo?.groupAvatarUrl ?? ''
       ..type = ZIMConversationType.group
       ..notificationStatus =
           (notificationStatus == ZIMGroupMessageNotificationStatus.notify
@@ -237,11 +258,11 @@ extension ZIMGroupExtension on ZIMGroup {
 }
 
 extension ZIMGroupInfoExtension on ZIMGroupInfo {
-  ZIMConversation toConversation() {
-    return ZIMConversation()
+  ZIMKitConversation toConversation() {
+    return ZIMKitConversation()
       ..id = groupID
       ..name = groupName
-      ..url = groupAvatarUrl
+      ..avatarUrl = groupAvatarUrl
       ..type = ZIMConversationType.group;
   }
 

@@ -1,15 +1,15 @@
 part of 'services.dart';
 
 mixin ZIMKitMessageService {
-  Future<ValueNotifier<List<ZIMKitMessage>>> getMessageListNotifier(
+  Future<ZIMKitMessageListNotifier> getMessageListNotifier(
       String conversationID, ZIMConversationType conversationType) {
-    return ZIMKitCore.instance.coreData
+    return ZIMKitCore.instance
         .getMessageListNotifier(conversationID, conversationType);
   }
 
   Future<int> loadMoreMessage(
       String conversationID, ZIMConversationType conversationType) async {
-    return ZIMKitCore.instance.coreData
+    return ZIMKitCore.instance
         .loadMoreMessage(conversationID, conversationType);
   }
 
@@ -20,7 +20,7 @@ mixin ZIMKitMessageService {
     FutureOr<ZIMKitMessage> Function(ZIMKitMessage)? preMessageSending,
     Function(ZIMKitMessage)? onMessageSent,
   }) async {
-    return ZIMKitCore.instance.coreData.sendTextMessage(
+    return ZIMKitCore.instance.sendTextMessage(
       conversationID,
       conversationType,
       text,
@@ -32,28 +32,6 @@ mixin ZIMKitMessageService {
   Future<void> sendFileMessage(
     String conversationID,
     ZIMConversationType conversationType,
-    PlatformFile file, {
-    bool audoDetectType = true,
-    ZIMMediaUploadingProgress? mediaUploadingProgress,
-    FutureOr<ZIMKitMessage> Function(ZIMKitMessage)? preMessageSending,
-    Function(ZIMKitMessage)? onMessageSent,
-  }) async {
-    if (kIsWeb) {
-    } else {
-      return ZIMKitCore.instance.coreData.sendMediaMessage(
-        conversationID,
-        conversationType,
-        file.path!,
-        ZIMMessageType.file,
-        preMessageSending: preMessageSending,
-        onMessageSent: onMessageSent,
-      );
-    }
-  }
-
-  Future<void> sendMediaMessage(
-    String conversationID,
-    ZIMConversationType conversationType,
     List<PlatformFile> files, {
     bool audoDetectType = true,
     ZIMMediaUploadingProgress? mediaUploadingProgress,
@@ -63,13 +41,36 @@ mixin ZIMKitMessageService {
     if (kIsWeb) {
     } else {
       for (final file in files) {
-        await ZIMKitCore.instance.coreData.sendMediaMessage(
+        ZIMKitCore.instance.sendMediaMessage(
           conversationID,
           conversationType,
           file.path!,
-          audoDetectType
-              ? ZIMKit().getMessageTypeByFileExtension(file)
-              : ZIMMessageType.file,
+          ZIMMessageType.file,
+          preMessageSending: preMessageSending,
+          onMessageSent: onMessageSent,
+        );
+      }
+    }
+  }
+
+  Future<void> sendMediaMessage(
+    String conversationID,
+    ZIMConversationType conversationType,
+    List<PlatformFile> files, {
+    ZIMMediaUploadingProgress? mediaUploadingProgress,
+    FutureOr<ZIMKitMessage> Function(ZIMKitMessage)? preMessageSending,
+    Function(ZIMKitMessage)? onMessageSent,
+  }) async {
+    if (kIsWeb) {
+    } else {
+      ZIMKitLogger.info(
+          'sendMediaMessage: ${DateTime.now().millisecondsSinceEpoch}');
+      for (final file in files) {
+        await ZIMKitCore.instance.sendMediaMessage(
+          conversationID,
+          conversationType,
+          file.path!,
+          ZIMKit().getMessageTypeByFileExtension(file),
           preMessageSending: preMessageSending,
           onMessageSent: onMessageSent,
         );
@@ -79,6 +80,7 @@ mixin ZIMKitMessageService {
   }
 
   void downloadMediaFile(ZIMKitMessage message) {
-    return ZIMKitCore.instance.coreData.downloadMediaFile(message);
+
+    return ZIMKitCore.instance.downloadMediaFile(message);
   }
 }

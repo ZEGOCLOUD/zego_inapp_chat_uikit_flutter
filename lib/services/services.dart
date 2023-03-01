@@ -1,10 +1,9 @@
 import 'dart:async';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:zego_zimkit/zego_zimkit.dart';
@@ -16,7 +15,6 @@ part 'conversation_service.dart';
 part 'group_service.dart';
 part 'input_service.dart';
 part 'message_service.dart';
-part 'room_service.dart';
 part 'user_service.dart';
 
 class ZIMKit
@@ -24,7 +22,6 @@ class ZIMKit
         ZIMKitConversationService,
         ZIMKitUserService,
         ZIMKitMessageService,
-        ZIMKitRoomService,
         ZIMKitInputService,
         ZIMKitGroupService {
   factory ZIMKit() => instance;

@@ -25,10 +25,10 @@ class ZIMKitConversationListView extends StatefulWidget {
   }) : super(key: key);
 
   // logic function
-  final List<ZIMKitConversation> Function(
-      BuildContext context, List<ZIMKitConversation>)? filter;
-  final List<ZIMKitConversation> Function(
-      BuildContext context, List<ZIMKitConversation>)? sorter;
+  final List<ZIMKitConversationNotifier> Function(
+      BuildContext context, List<ZIMKitConversationNotifier>)? filter;
+  final List<ZIMKitConversationNotifier> Function(
+      BuildContext context, List<ZIMKitConversationNotifier>)? sorter;
 
   // item event
   final void Function(BuildContext context, ZIMKitConversation conversation,
@@ -52,7 +52,7 @@ class ZIMKitConversationListView extends StatefulWidget {
           BuildContext context, DateTime? messageTime, Widget defaultWidget)?
       lastMessageTimeBuilder;
   final Widget Function(
-          BuildContext context, ZIMMessage? message, Widget defaultWidget)?
+          BuildContext context, ZIMKitMessage? message, Widget defaultWidget)?
       lastMessageBuilder;
 
   // item builder
@@ -88,7 +88,7 @@ class _ZIMKitConversationListViewState
     super.dispose();
   }
 
-  void scrollControllerListener() async {
+  Future<void> scrollControllerListener() async {
     if (_loadMoreCompleter == null || _loadMoreCompleter!.isCompleted) {
       if (_scrollController.position.pixels >=
           0.8 * _scrollController.position.maxScrollExtent) {
@@ -110,20 +110,20 @@ class _ZIMKitConversationListViewState
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             return ValueListenableBuilder(
-              valueListenable:
-                  snapshot.data! as ValueNotifier<List<ZIMKitConversation>>,
+              valueListenable: snapshot.data! as ZIMKitConversationListNotifier,
               builder: (BuildContext context,
-                  List<ZIMKitConversation> conversationList, Widget? child) {
+                  List<ZIMKitConversationNotifier> conversationList,
+                  Widget? child) {
                 if (conversationList.isEmpty) {
                   return widget.emptyBuilder
                           ?.call(context, const SizedBox.shrink()) ??
                       const SizedBox.shrink();
                 }
                 conversationList =
-                    widget.sorter?.call(context, conversationList) ??
+                    widget.filter?.call(context, conversationList) ??
                         conversationList;
                 conversationList =
-                    widget.filter?.call(context, conversationList) ??
+                    widget.sorter?.call(context, conversationList) ??
                         conversationList;
                 return LayoutBuilder(
                   builder: (context, BoxConstraints constraints) {
@@ -133,60 +133,67 @@ class _ZIMKitConversationListViewState
                       itemCount: conversationList.length,
                       itemBuilder: (context, index) {
                         final conversation = conversationList[index];
-                        // defaultAction
 
-                        // defaultWidget
-                        final Widget defaultWidget = ZIMKitConversationWidget(
-                          conversationID: conversationList[index].id,
-                          conversationType: conversationList[index].type,
-                          lastMessageTimeBuilder: widget.lastMessageTimeBuilder,
-                          lastMessageBuilder: widget.lastMessageBuilder,
-                          onLongPress: (BuildContext context,
-                              LongPressDownDetails longPressDownDetails) {
-                            void onLongPressDefaultAction() =>
-                                _onLongPressDefaultAction(
+                        return ValueListenableBuilder(
+                          valueListenable: conversation,
+                          builder: (BuildContext context,
+                              ZIMKitConversation conversation, Widget? child) {
+                            // defaultWidget
+                            final Widget defaultWidget =
+                                ZIMKitConversationWidget(
+                              conversation: conversation,
+                              lastMessageTimeBuilder:
+                                  widget.lastMessageTimeBuilder,
+                              lastMessageBuilder: widget.lastMessageBuilder,
+                              onLongPress: (BuildContext context,
+                                  LongPressDownDetails longPressDownDetails) {
+                                void onLongPressDefaultAction() {
+                                  _onLongPressDefaultAction(
                                     context,
                                     longPressDownDetails,
                                     conversation.id,
-                                    conversation.type);
-                            if (widget.onLongPress != null) {
-                              widget.onLongPress!(
-                                  context,
-                                  conversationList[index],
-                                  longPressDownDetails,
-                                  onLongPressDefaultAction);
-                            } else {
-                              onLongPressDefaultAction();
-                            }
-                          },
-                          onPressed: (BuildContext context) {
-                            void onPressedDefaultAction() {
-                              Navigator.push(context, MaterialPageRoute(
-                                builder: (context) {
-                                  return ZIMKitMessageListPage(
-                                    conversationID: conversation.id,
-                                    conversationType: conversation.type,
-                                    theme: widget.theme,
+                                    conversation.type,
                                   );
-                                },
-                              ));
-                            }
+                                }
 
-                            if (widget.onPressed != null) {
-                              widget.onPressed!(
-                                  context,
-                                  conversationList[index],
-                                  onPressedDefaultAction);
-                            } else {
-                              onPressedDefaultAction();
-                            }
+                                if (widget.onLongPress != null) {
+                                  widget.onLongPress!(
+                                      context,
+                                      conversation,
+                                      longPressDownDetails,
+                                      onLongPressDefaultAction);
+                                } else {
+                                  onLongPressDefaultAction();
+                                }
+                              },
+                              onPressed: (BuildContext context) {
+                                void onPressedDefaultAction() {
+                                  Navigator.push(context, MaterialPageRoute(
+                                    builder: (context) {
+                                      return ZIMKitMessageListPage(
+                                        conversationID: conversation.id,
+                                        conversationType: conversation.type,
+                                        theme: widget.theme,
+                                      );
+                                    },
+                                  ));
+                                }
+
+                                if (widget.onPressed != null) {
+                                  widget.onPressed!(context, conversation,
+                                      onPressedDefaultAction);
+                                } else {
+                                  onPressedDefaultAction();
+                                }
+                              },
+                            );
+
+                            // customWidget
+                            return widget.itemBuilder?.call(
+                                    context, conversation, defaultWidget) ??
+                                defaultWidget;
                           },
                         );
-
-                        // customWidget
-                        return widget.itemBuilder?.call(context,
-                                conversationList[index], defaultWidget) ??
-                            defaultWidget;
                       },
                     );
                   },

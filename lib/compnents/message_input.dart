@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-
 import 'package:zego_zimkit/compnents/messages/widgets/widgets.dart';
 import 'package:zego_zimkit/services/services.dart';
 
@@ -14,6 +13,7 @@ class ZIMKitMessageInput extends StatefulWidget {
     this.preMessageSending,
     this.editingController,
     this.showPickFileButton = true,
+    this.showPickMediaButton = true,
     this.actions = const [],
     this.inputDecoration,
     this.theme,
@@ -28,6 +28,10 @@ class ZIMKitMessageInput extends StatefulWidget {
   /// By default, [ZIMKitMessageInput] will show a button to pick file.
   /// If you don't want to show this button, set [showPickFileButton] to false.
   final bool showPickFileButton;
+
+  /// By default, [ZIMKitMessageInput] will show a button to pick media.
+  /// If you don't want to show this button, set [showPickMediaButton] to false.
+  final bool showPickMediaButton;
 
   /// To add your own action, use the [actions] parameter like this:
   ///
@@ -91,8 +95,6 @@ class _ZIMKitMessageInputState extends State<ZIMKitMessageInput> {
   TextEditingController get _editingController =>
       widget.editingController ?? _defaultEditingController;
 
-  final ValueNotifier<bool> isTyping = ValueNotifier(false);
-
   @override
   Widget build(BuildContext context) {
     return Theme(
@@ -130,42 +132,59 @@ class _ZIMKitMessageInputState extends State<ZIMKitMessageInput> {
                         child: TextField(
                           onSubmitted: (value) => sendTextMessage(),
                           controller: _editingController,
-                          onChanged: (value) =>
-                              isTyping.value = value.isNotEmpty,
                           decoration: widget.inputDecoration ??
                               const InputDecoration(hintText: 'Type message'),
                         ),
                       ),
-                      ValueListenableBuilder<bool>(
-                        valueListenable: isTyping,
-                        builder: (context, isTyping, child) {
+                      ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: _editingController,
+                        builder: (context, textEditingValue, child) {
                           return Builder(
                             builder: (context) {
-                              if (isTyping) {
+                              if (textEditingValue.text.isNotEmpty ||
+                                  rightInsideActionsIsEmpty) {
                                 return Container(
                                   height: 32,
                                   width: 32,
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).primaryColor,
+                                    color: textEditingValue.text.isNotEmpty
+                                        ? Theme.of(context).primaryColor
+                                        : Theme.of(context)
+                                            .primaryColor
+                                            .withOpacity(0.6),
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
                                     padding: EdgeInsets.zero,
                                     icon: const Icon(Icons.send,
                                         size: 16, color: Colors.white),
-                                    onPressed: () async {
-                                      sendTextMessage();
-                                    },
+                                    onPressed: textEditingValue.text.isNotEmpty
+                                        ? sendTextMessage
+                                        : null,
                                   ),
                                 );
                               } else {
                                 return Row(
                                   children: [
+                                    if (widget.showPickMediaButton)
+                                      ZIMKitPickMediaButton(
+                                        onFilePicked:
+                                            (List<PlatformFile> files) {
+                                          ZIMKit().sendMediaMessage(
+                                            widget.conversationID,
+                                            widget.conversationType,
+                                            files,
+                                            onMessageSent: widget.onMessageSent,
+                                            preMessageSending:
+                                                widget.preMessageSending,
+                                          );
+                                        },
+                                      ),
                                     if (widget.showPickFileButton)
                                       ZIMKitPickFileButton(
                                         onFilePicked:
                                             (List<PlatformFile> files) {
-                                          ZIMKit().sendMediaMessage(
+                                          ZIMKit().sendFileMessage(
                                             widget.conversationID,
                                             widget.conversationType,
                                             files,
@@ -206,7 +225,6 @@ class _ZIMKitMessageInputState extends State<ZIMKitMessageInput> {
       preMessageSending: widget.preMessageSending,
     );
     _editingController.clear();
-    isTyping.value = false;
     // TODO mac auto focus or not
     // TODO mobile auto focus or not
   }
@@ -218,6 +236,16 @@ class _ZIMKitMessageInputState extends State<ZIMKitMessageInput> {
             .toList() ??
         [];
   }
+
+  bool get rightInsideActionsIsEmpty =>
+      (widget.actions
+              ?.where((element) =>
+                  element.location ==
+                  ZIMKitMessageInputActionLocation.rightInside)
+              .isEmpty ??
+          true) &&
+      !widget.showPickFileButton &&
+      !widget.showPickMediaButton;
 }
 
 enum ZIMKitMessageInputActionLocation { left, right, leftInside, rightInside }

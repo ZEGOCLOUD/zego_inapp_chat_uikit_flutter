@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-// class ListNotifier<T> extends ChangeNotifier implements ValueListenable<List<T>> {
 class ListNotifier<T> extends ValueNotifier<List<T>> {
   ListNotifier(List<T> value) : super(value);
 
@@ -8,40 +7,40 @@ class ListNotifier<T> extends ValueNotifier<List<T>> {
   bool get isEmpty => value.isEmpty;
   bool get isNotEmpty => value.isNotEmpty;
 
-  void add(T item) {
+  void add(T item, {bool notify = true}) {
     value.add(item);
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
-  bool remove(Object? item) {
+  bool remove(Object? item, {bool notify = true}) {
     final changed = value.remove(item);
-    if (changed) notifyListeners();
+    if (changed && notify) notifyListeners();
     return changed;
   }
 
-  void addAll(Iterable<T> iterable) {
+  void addAll(Iterable<T> iterable, {bool notify = true}) {
     value.addAll(iterable);
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
-  void clear() {
+  void clear({bool notify = true}) {
     value.clear();
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
-  void insert(int index, T element) {
+  void insert(int index, T element, {bool notify = true}) {
     value.insert(index, element);
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
-  void insertAll(int index, Iterable<T> iterable) {
+  void insertAll(int index, Iterable<T> iterable, {bool notify = true}) {
     value.insertAll(index, iterable);
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
-  void removeWhere(bool Function(T element) param0) {
-    value.removeWhere(param0);
-    notifyListeners();
+  void removeWhere(bool Function(T element) test, {bool notify = true}) {
+    value.removeWhere(test);
+    if (notify) notifyListeners();
   }
 
   T operator [](int index) {
@@ -54,4 +53,11 @@ class ListNotifier<T> extends ValueNotifier<List<T>> {
       notifyListeners();
     }
   }
+
+  void sort(int Function(T a, T b) compare, {bool notify = true}) {
+    value.sort(compare);
+    if (notify) notifyListeners();
+  }
+
+  void triggerNotify() => notifyListeners();
 }

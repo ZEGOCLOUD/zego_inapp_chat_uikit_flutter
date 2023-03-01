@@ -5,27 +5,25 @@ import 'package:zego_zimkit/zego_zimkit.dart';
 
 export 'package:file_picker/file_picker.dart';
 
-class ZIMKitPickFileButton extends StatelessWidget {
-  const ZIMKitPickFileButton({
+class ZIMKitPickMediaButton extends StatelessWidget {
+  const ZIMKitPickMediaButton({
     Key? key,
     required this.onFilePicked,
-    this.type = FileType.any,
     this.icon,
   }) : super(key: key);
 
   final Function(List<PlatformFile> files) onFilePicked;
   final Widget? icon;
-  final FileType type;
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: () async {
-        ZIMKit().pickFiles(type: type).then(onFilePicked);
+        ZIMKit().pickFiles(type: FileType.media).then(onFilePicked);
       },
       icon: icon ??
           Icon(
-            Icons.attach_file,
+            Icons.photo_library,
             color:
                 Theme.of(context).textTheme.bodyLarge!.color!.withOpacity(0.64),
           ),

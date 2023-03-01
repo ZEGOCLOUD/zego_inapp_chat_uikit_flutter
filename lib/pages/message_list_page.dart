@@ -16,6 +16,7 @@ class ZIMKitMessageListPage extends StatelessWidget {
     this.preMessageSending,
     this.inputDecoration,
     this.showPickFileButton = true,
+    this.showPickMediaButton = true,
     this.editingController,
     this.messageListScrollController,
     this.onMessageItemPressd,
@@ -75,6 +76,10 @@ class ZIMKitMessageListPage extends StatelessWidget {
   /// By default, [ZIMKitMessageInput] will show a button to pick file.
   /// If you don't want to show this button, set [showPickFileButton] to false.
   final bool showPickFileButton;
+
+  /// By default, [ZIMKitMessageInput] will show a button to pick media.
+  /// If you don't want to show this button, set [showPickMediaButton] to false.
+  final bool showPickMediaButton;
 
   /// The TextField's decoration.
   final InputDecoration? inputDecoration;
@@ -141,6 +146,7 @@ class ZIMKitMessageListPage extends StatelessWidget {
               preMessageSending: preMessageSending,
               inputDecoration: inputDecoration,
               showPickFileButton: showPickFileButton,
+              showPickMediaButton: showPickMediaButton,
               editingController: editingController,
               theme: theme,
             ),
@@ -154,8 +160,8 @@ class ZIMKitMessageListPage extends StatelessWidget {
     return AppBar(
       title: ValueListenableBuilder(
         valueListenable:
-            ZIMKit().getConversation(conversationID, conversationType).data,
-        builder: (context, ZIMConversation conversation, child) {
+            ZIMKit().getConversation(conversationID, conversationType),
+        builder: (context, ZIMKitConversation conversation, child) {
           return Row(
             children: [
               CircleAvatar(child: conversation.icon),
@@ -163,8 +169,12 @@ class ZIMKitMessageListPage extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(conversation.name, style: const TextStyle(fontSize: 16)),
-                  Text(conversation.id, style: const TextStyle(fontSize: 12))
+                  Text(conversation.name,
+                      style: const TextStyle(fontSize: 16),
+                      overflow: TextOverflow.clip),
+                  Text(conversation.id,
+                      style: const TextStyle(fontSize: 12),
+                      overflow: TextOverflow.clip)
                 ],
               )
             ],

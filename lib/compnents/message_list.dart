@@ -65,7 +65,7 @@ class _ZIMKitMessageListViewState extends State<ZIMKitMessageListView> {
     super.dispose();
   }
 
-  void scrollControllerListener() async {
+  Future<void> scrollControllerListener() async {
     if (_loadMoreCompleter == null || _loadMoreCompleter!.isCompleted) {
       if (_scrollController.position.pixels >=
           0.8 * _scrollController.position.maxScrollExtent) {
@@ -91,9 +91,9 @@ class _ZIMKitMessageListViewState extends State<ZIMKitMessageListView> {
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               return ValueListenableBuilder(
-                valueListenable:
-                    snapshot.data! as ValueNotifier<List<ZIMKitMessage>>,
-                builder: (BuildContext context, List<ZIMKitMessage> messageList,
+                valueListenable: snapshot.data! as ZIMKitMessageListNotifier,
+                builder: (BuildContext context,
+                    List<ValueNotifier<ZIMKitMessage>> messageList,
                     Widget? child) {
                   ZIMKit().clearUnreadCount(
                       widget.conversationID, widget.conversationType);
@@ -107,25 +107,32 @@ class _ZIMKitMessageListViewState extends State<ZIMKitMessageListView> {
                       itemBuilder: (context, index) {
                         final reversedIndex = messageList.length - index - 1;
                         final message = messageList[reversedIndex];
-                        // defaultWidget
-                        final Widget defaultWidget = ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: constraints.maxWidth,
-                            maxHeight: constraints.maxHeight * 0.5,
-                          ),
-                          child: ZIMKitMessageWidget(
-                            key: ValueKey(message.hashCode),
-                            message: message,
-                            onPressed: widget.onPressed,
-                            onLongPress: widget.onLongPress,
-                          ),
+
+                        return ValueListenableBuilder(
+                          valueListenable: message,
+                          builder: (BuildContext context, ZIMKitMessage msg,
+                              Widget? child) {
+                            // defaultWidget
+                            final Widget defaultWidget = ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: constraints.maxWidth,
+                                maxHeight: constraints.maxHeight * 0.5,
+                              ),
+                              child: ZIMKitMessageWidget(
+                                key: ValueKey(msg.hashCode),
+                                message: msg,
+                                onPressed: widget.onPressed,
+                                onLongPress: widget.onLongPress,
+                              ),
+                            );
+                            // TODO spacing
+                            // TODO 时间间隔
+                            // customWidget
+                            return widget.itemBuilder
+                                    ?.call(context, msg, defaultWidget) ??
+                                defaultWidget;
+                          },
                         );
-                        // TODO spacing
-                        // TODO 时间间隔
-                        // customWidget
-                        return widget.itemBuilder
-                                ?.call(context, message, defaultWidget) ??
-                            defaultWidget;
                       },
                     );
                   });

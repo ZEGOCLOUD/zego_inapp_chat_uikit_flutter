@@ -11,7 +11,7 @@ class ZIMKitMessageStatusDot extends StatelessWidget {
       case ZIMMessageSentStatus.failed:
         return Theme.of(context).colorScheme.error;
       case ZIMMessageSentStatus.sending:
-        return Theme.of(context).textTheme.bodyText1!.color!.withOpacity(0.1);
+        return Theme.of(context).textTheme.bodyLarge!.color!.withOpacity(0.1);
       case ZIMMessageSentStatus.success:
         return Theme.of(context).primaryColor;
       default:
@@ -21,26 +21,21 @@ class ZIMKitMessageStatusDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ZIMMessage>(
-      valueListenable: message.data,
-      builder: (context, ZIMMessage message, child) {
-        return Container(
-          margin: const EdgeInsets.all(10),
-          height: 12,
-          width: 12,
-          decoration: BoxDecoration(
-            color: dotColor(context, message.sentStatus),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            message.sentStatus == ZIMMessageSentStatus.failed
-                ? Icons.close
-                : Icons.done,
-            size: 8,
-            color: Theme.of(context).scaffoldBackgroundColor,
-          ),
-        );
-      },
+    return Container(
+      margin: const EdgeInsets.all(10),
+      height: 12,
+      width: 12,
+      decoration: BoxDecoration(
+        color: dotColor(context, message.info.sentStatus),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        message.info.sentStatus == ZIMMessageSentStatus.failed
+            ? Icons.close
+            : Icons.done,
+        size: 8,
+        color: Theme.of(context).scaffoldBackgroundColor,
+      ),
     );
   }
 }

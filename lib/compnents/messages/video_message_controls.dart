@@ -1,17 +1,15 @@
+// ignore_for_file: implementation_imports
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-
+import 'package:chewie/chewie.dart';
 import 'package:chewie/src/animated_play_pause.dart';
 import 'package:chewie/src/center_play_button.dart';
-import 'package:chewie/src/chewie_player.dart';
-import 'package:chewie/src/chewie_progress_colors.dart';
 import 'package:chewie/src/helpers/utils.dart';
 import 'package:chewie/src/material/material_progress_bar.dart';
 import 'package:chewie/src/material/widgets/options_dialog.dart';
 import 'package:chewie/src/material/widgets/playback_speed_dialog.dart';
-import 'package:chewie/src/models/option_item.dart';
-import 'package:chewie/src/notifiers/index.dart';
+import 'package:chewie/src/notifiers/player_notifier.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 
@@ -187,7 +185,7 @@ class ZIMKitCustompControlsState extends State<ZIMKitCustomControls>
   AnimatedOpacity _buildBottomBar(
     BuildContext context,
   ) {
-    final iconColor = Theme.of(context).textTheme.button!.color;
+    final iconColor = Theme.of(context).textTheme.labelLarge!.color;
 
     return AnimatedOpacity(
       opacity: notifier.hideStuff ? 0.0 : 1.0,
@@ -510,8 +508,8 @@ class ZIMKitCustompControlsState extends State<ZIMKitCustomControls>
             ChewieProgressColors(
               playedColor: Theme.of(context).colorScheme.secondary,
               handleColor: Theme.of(context).colorScheme.secondary,
-              bufferedColor: Theme.of(context).backgroundColor.withOpacity(0.5),
-              backgroundColor: Theme.of(context).disabledColor.withOpacity(.5),
+              bufferedColor: Theme.of(context).colorScheme.background.withOpacity(0.5),
+              backgroundColor: Theme.of(context).disabledColor.withOpacity(0.5),
             ),
       ),
     );

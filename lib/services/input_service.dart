@@ -5,11 +5,22 @@ mixin ZIMKitInputService {
       {FileType type = FileType.any, bool allowMultiple = true}) async {
     try {
       requestPermission(Permission.storage);
+      ZIMKitLogger.info(
+          'pickFiles: start, ${DateTime.now().millisecondsSinceEpoch}');
       // see https://github.com/miguelpruivo/flutter_file_picker/wiki/API#-filepickerpickfiles
-      return (await FilePicker.platform
-                  .pickFiles(type: type, allowMultiple: allowMultiple))
+      final ret = (await FilePicker.platform.pickFiles(
+            type: type,
+            allowMultiple: allowMultiple,
+            onFileLoading: (p0) {
+              ZIMKitLogger.info('onFileLoading: '
+                  '$p0,${DateTime.now().millisecondsSinceEpoch}');
+            },
+          ))
               ?.files ??
           [];
+      ZIMKitLogger.info(
+          'pickFiles: $ret, ${DateTime.now().millisecondsSinceEpoch}');
+      return ret;
     } on PlatformException catch (e) {
       ZIMKitLogger.severe('Unsupported operation $e');
     } catch (e) {
@@ -32,11 +43,14 @@ mixin ZIMKitInputService {
 
     var messageType = ZIMMessageType.file;
 
-    if (supportImageList.contains(file.extension)) {
+    if (file.extension == null) {
+      return messageType;
+    }
+    if (supportImageList.contains(file.extension!.toLowerCase())) {
       messageType = ZIMMessageType.image;
-    } else if (supportVideoList.contains(file.extension)) {
+    } else if (supportVideoList.contains(file.extension!.toLowerCase())) {
       messageType = ZIMMessageType.video;
-    } else if (supportAudioList.contains(file.extension)) {
+    } else if (supportAudioList.contains(file.extension!.toLowerCase())) {
       messageType = ZIMMessageType.audio;
     }
 

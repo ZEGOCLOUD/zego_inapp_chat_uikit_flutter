@@ -1,32 +1,29 @@
 import 'dart:math';
 
+import 'package:badges/badges.dart' as badges;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-
-import 'package:badges/badges.dart';
 
 import 'package:zego_zimkit/services/services.dart';
 
 class ZIMKitConversationWidget extends StatefulWidget {
   const ZIMKitConversationWidget({
     Key? key,
-    required this.conversationID,
-    this.conversationType = ZIMConversationType.peer,
+    required this.conversation,
     required this.onPressed,
     this.lastMessageTimeBuilder,
     this.lastMessageBuilder,
     required this.onLongPress,
   }) : super(key: key);
 
-  final String conversationID;
-  final ZIMConversationType conversationType;
+  final ZIMKitConversation conversation;
 
   // ui builder
   final Widget Function(
           BuildContext context, DateTime? messageTime, Widget defaultWidget)?
       lastMessageTimeBuilder;
   final Widget Function(
-          BuildContext context, ZIMMessage? message, Widget defaultWidget)?
+          BuildContext context, ZIMKitMessage? message, Widget defaultWidget)?
       lastMessageBuilder;
 
   // event
@@ -45,81 +42,75 @@ class _ZIMKitConversationWidgetState extends State<ZIMKitConversationWidget> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    return ValueListenableBuilder(
-        valueListenable: ZIMKit()
-            .getConversation(widget.conversationID, widget.conversationType)
-            .data,
-        builder: (context, ZIMConversation conversation, child) {
-          return GestureDetector(
-            onTap: () => widget.onPressed(context),
-            onLongPressDown: (longPressDownDetails) =>
-                _longPressDownDetails = longPressDownDetails,
-            onLongPress: () =>
-                widget.onLongPress(context, _longPressDownDetails),
-            child: InkWell(
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: min(screenWidth / 10, 20), vertical: 15),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Badge(
-                      showBadge: conversation.unreadMessageCount != 0,
-                      badgeContent: Text('${conversation.unreadMessageCount}'),
-                      animationType: BadgeAnimationType.scale,
-                      animationDuration: const Duration(milliseconds: 150),
-                      child: SizedBox(
-                          width: 50, height: 50, child: conversation.icon),
-                    ),
-                    if (screenWidth >= 100)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                conversation.name.isNotEmpty
-                                    ? conversation.name
-                                    : conversation.id,
-                                maxLines: 1,
-                                overflow: TextOverflow.clip,
-                              ),
-                              const SizedBox(height: 8),
-                              Builder(builder: (context) {
-                                final defaultWidget = defaultlastMessageBuilder(
-                                    conversation.lastMessage);
-                                return widget.lastMessageBuilder?.call(
-                                        context,
-                                        conversation.lastMessage,
-                                        defaultWidget) ??
-                                    defaultWidget;
-                              }),
-                            ],
-                          ),
-                        ),
-                      ),
-                    if (screenWidth >= 250)
-                      Builder(builder: (context) {
-                        final messageTime = conversation.lastMessage != null
-                            ? DateTime.fromMillisecondsSinceEpoch(
-                                conversation.lastMessage!.timestamp)
-                            : null;
-                        final defaultWidget =
-                            defaultlastMessageTimeBuilder(messageTime);
-                        return widget.lastMessageTimeBuilder
-                                ?.call(context, messageTime, defaultWidget) ??
-                            defaultWidget;
-                      }),
-                  ],
+    return GestureDetector(
+      onTap: () => widget.onPressed(context),
+      onLongPressDown: (longPressDownDetails) =>
+          _longPressDownDetails = longPressDownDetails,
+      onLongPress: () => widget.onLongPress(context, _longPressDownDetails),
+      child: InkWell(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+              horizontal: min(screenWidth / 10, 20), vertical: 15),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              badges.Badge(
+                showBadge: widget.conversation.unreadMessageCount != 0,
+                badgeContent: Text('${widget.conversation.unreadMessageCount}'),
+                badgeAnimation: const badges.BadgeAnimation.scale(
+                  animationDuration: Duration(milliseconds: 150),
                 ),
+                child: SizedBox(
+                    width: 50, height: 50, child: widget.conversation.icon),
               ),
-            ),
-          );
-        });
+              if (screenWidth >= 100)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.conversation.name.isNotEmpty
+                              ? widget.conversation.name
+                              : widget.conversation.id,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Builder(builder: (context) {
+                          final defaultWidget = defaultLastMessageBuilder(
+                              widget.conversation.lastMessage);
+                          return widget.lastMessageBuilder?.call(
+                                  context,
+                                  widget.conversation.lastMessage,
+                                  defaultWidget) ??
+                              defaultWidget;
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+              if (screenWidth >= 250)
+                Builder(builder: (context) {
+                  final messageTime = widget.conversation.lastMessage != null
+                      ? DateTime.fromMillisecondsSinceEpoch(
+                          widget.conversation.lastMessage!.info.timestamp)
+                      : null;
+                  final defaultWidget =
+                      defaultLastMessageTimeBuilder(messageTime);
+                  return widget.lastMessageTimeBuilder
+                          ?.call(context, messageTime, defaultWidget) ??
+                      defaultWidget;
+                }),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  Widget defaultlastMessageBuilder(ZIMMessage? message) {
+  Widget defaultLastMessageBuilder(ZIMKitMessage? message) {
     if (message == null) {
       return const SizedBox.shrink();
     }
@@ -130,7 +121,7 @@ class _ZIMKitConversationWidgetState extends State<ZIMKitConversationWidget> {
     );
   }
 
-  Widget defaultlastMessageTimeBuilder(DateTime? messageTime) {
+  Widget defaultLastMessageTimeBuilder(DateTime? messageTime) {
     if (messageTime == null) {
       return const SizedBox.shrink();
     }

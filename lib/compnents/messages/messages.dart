@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:zego_zimkit/compnents/common/common.dart';
 import 'package:zego_zimkit/compnents/messages/audio_message.dart';
 import 'package:zego_zimkit/compnents/messages/file_message.dart';
@@ -16,15 +15,16 @@ export 'video_message.dart';
 class ZIMKitMessageWidget extends StatelessWidget {
   const ZIMKitMessageWidget({
     Key? key,
-    required this.message,
     this.onPressed,
     this.onLongPress,
     this.statusBuilder,
     this.avatarBuilder,
     this.timestampBuilder,
+    required this.message,
   }) : super(key: key);
 
   final ZIMKitMessage message;
+
   final Widget Function(
           BuildContext context, ZIMKitMessage message, Widget defaultWidget)?
       avatarBuilder;
@@ -43,8 +43,8 @@ class ZIMKitMessageWidget extends StatelessWidget {
 
   // TODO default onPressed onLongPress action
   // TODO custom meesage
-  Widget buildMessage(BuildContext context, ZIMKitMessage message) {
-    switch (message.data.value.type) {
+  Widget buildMessage(BuildContext context) {
+    switch (message.type) {
       case ZIMMessageType.text:
         return ZIMKitTextMessage(
             onLongPress: onLongPress, onPressed: onPressed, message: message);
@@ -62,38 +62,37 @@ class ZIMKitMessageWidget extends StatelessWidget {
             onLongPress: onLongPress, onPressed: onPressed, message: message);
 
       default:
-        return Text(message.data.value.type.toString());
+        return Text(message.tostr());
     }
   }
 
-  Widget buildStatus(BuildContext context, ZIMKitMessage message) {
+  Widget buildStatus(BuildContext context) {
     final Widget defaultStatusWidget = ZIMKitMessageStatusDot(message);
     return statusBuilder?.call(context, message, defaultStatusWidget) ??
         defaultStatusWidget;
   }
 
-  Widget buildAvatar(BuildContext context, ZIMKitMessage message) {
+  Widget buildAvatar(BuildContext context) {
     final Widget defaultAvatarWidget =
-        ZIMKitAvatar(userID: message.senderUserID, width: 50, height: 50);
+        ZIMKitAvatar(userID: message.info.senderUserID, width: 50, height: 50);
     return avatarBuilder?.call(context, message, defaultAvatarWidget) ??
         defaultAvatarWidget;
   }
 
-  // TODO how to custom laytout
-  // TODO timestamp
-  List<Widget> localMessage(BuildContext context, ZIMKitMessage message) {
+  // TODO add userName or groupNickName to message
+  List<Widget> localMessage(BuildContext context) {
     return [
-      buildMessage(context, message),
-      // buildAvatar(context, message),
-      buildStatus(context, message),
+      buildMessage(context),
+      // buildAvatar(context),
+      buildStatus(context),
     ];
   }
 
-  List<Widget> remoteMessage(BuildContext context, ZIMKitMessage message) {
+  List<Widget> remoteMessage(BuildContext context) {
     return [
-      buildAvatar(context, message),
+      buildAvatar(context),
       const SizedBox(width: 10),
-      buildMessage(context, message),
+      buildMessage(context),
     ];
   }
 
@@ -104,14 +103,13 @@ class ZIMKitMessageWidget extends StatelessWidget {
       child: FractionallySizedBox(
         widthFactor: 0.66,
         alignment:
-            message.isSender ? Alignment.centerRight : Alignment.centerLeft,
+            message.isMine ? Alignment.centerRight : Alignment.centerLeft,
         child: Row(
-          mainAxisAlignment: message.isSender
-              ? MainAxisAlignment.end
-              : MainAxisAlignment.start,
+          mainAxisAlignment:
+              message.isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
           children: [
-            if (message.isSender) ...localMessage(context, message),
-            if (!message.isSender) ...remoteMessage(context, message),
+            if (message.isMine) ...localMessage(context),
+            if (!message.isMine) ...remoteMessage(context),
           ],
         ),
       ),
