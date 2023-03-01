@@ -1,15 +1,5 @@
 # ZIMKit(ZegoCloud In-App Chat UIKit)
 
-🥳beta support:
-- Create peer-to-peer chat / Create group chat/ Join group chat
-- Send text, picture(<10M), gif(<10M), video(<100M), file(<100M)
-- Long press the conversation list item to delete the conversation or exit the group chat
-- custom ui (Please check widgets' parameters)
-
-✨Coming soon: 
-- Invite to join group chat / set user avatar /set group avatar
-- download files
-
 ## 1. init imkit
 
 ```
