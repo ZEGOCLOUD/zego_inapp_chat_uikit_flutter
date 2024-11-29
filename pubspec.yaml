@@ -1,42 +1,61 @@
 name: zego_zimkit
-description: zego imkit.
-version: 0.0.1
+description: A low-code plugin that provides a wrapper for IM widgets. Aims to simplify the development process by offering a user-friendly solution into applications.
+version: 1.18.13
 homepage: https://www.zegocloud.com/
-publish_to: 'none' 
 
 environment:
-  sdk: ">=2.16.2 <3.0.0"
+  sdk: ">=2.16.2 <4.0.0"
   flutter: ">=1.17.0"
 
 dependencies:
   flutter:
     sdk: flutter
 
-  cupertino_icons: ^1.0.5
+  zego_plugin_adapter: ^2.13.2
+  zego_uikit_signaling_plugin: ^2.8.4
+  zego_zim: ^2.16.0+4
+  zego_zim_audio: ^1.0.0+1
+  zego_zpns: ^2.6.0+3
+  zego_callkit: ^1.0.0+4
+
+  cupertino_icons: ^1.0.6
   equatable: ^2.0.5
-  zego_zim: 2.5.0+1
-  cached_network_image: ^3.2.3
-  permission_handler: ^10.2.0
-  wakelock: ^0.6.2
-  http: ^0.13.5
-  encrypt: ^5.0.1
-  logging: ^1.1.0
-  badges: ^2.0.3
-  async: any
-  video_player: ^2.4.8
-  file_picker: ^5.2.3
-  video_player_macos: ^1.0.6
-  chewie: ^1.3.6
+  cached_network_image: ^3.3.0
+  permission_handler: ^11.3.1
+  encrypt: ^5.0.3
+  logging: ^1.2.0
+  async: ^2.0.0
+  video_player: ^2.7.2
+  file_picker: ^8.0.6
+  chewie: ^1.7.1
+  provider: ^6.0.5
+  shared_preferences: ^2.2.3
+  path_provider: ^2.1.3
+  plugin_platform_interface: ^2.1.8
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  flutter_lints: ^3.0.0
+  import_sorter: ^4.6.0 # run 'flutter pub run import_sorter:main'
   dart_code_metrics: any
-  flutter_lints: any
-  import_sorter: any
+  lints: ^3.0.0
 
 import_sorter:
   comments: false
 
 flutter:
   uses-material-design: true
+  plugin:
+    platforms:
+      android:
+        package: com.zegocloud.uikit.zimkit_plugin
+        pluginClass: ZegoUIKitZIMKitPlugin
+      ios:
+        pluginClass: ZegoUIKitZIMKitPlugin
+
+screenshots:
+  - description: "A full-featured chat kit that enables you to easily build one-on-one or group chat into your app in minutes."
+    path: images/img_chat.png

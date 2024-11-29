@@ -1,8 +1,14 @@
 # ZIMKit(ZegoCloud In-App Chat UIKit)
 
-[![](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://discord.gg/EtNRATttyp)
+🥳beta support:
+- Create peer-to-peer chat / Create group chat/ Join group chat
+- Send text, picture(<10M), gif(<10M), video(<100M), file(<100M)
+- Long press the conversation list item to delete the conversation or exit the group chat
+- custom ui (Please check widgets' parameters)
 
-> If you have any questions regarding bugs and feature requests, visit the [ZEGOCLOUD community](https://discord.gg/EtNRATttyp) .
+✨Coming soon: 
+- Invite to join group chat / set user avatar /set group avatar
+- download files
 
 ## 1. init imkit
 
@@ -45,10 +51,7 @@ class ZIMKitDemoHomePage extends StatelessWidget {
     return WillPopScope(
       onWillPop: () async => false,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Conversations'),
-          actions: const [HomePagePopupMenuButton()],
-        ),
+        appBar: AppBar(title: const Text('Conversations')),
         body: ZIMKitConversationListView(
           onPressed: (context, conversation, defaultAction) {
             Navigator.push(context, MaterialPageRoute(

@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="com.zegocloud.uikit.zimkit_plugin">
+
+    <application>
+        <receiver android:name=".notification.ClickReceiver" android:exported="false"/>
+    </application>
+
+</manifest>
